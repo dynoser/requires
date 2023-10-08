@@ -36,6 +36,10 @@ class DynoImporter {
     public function saveDynoFile() {
         $dynoStr = '<' . "?php\n" . 'return ';
         $dynoStr .= \var_export($this->dynoArr, true) . ";\n";
+        $chkDir = \dirname(DYNO_FILE);
+        if (!\is_dir($chkDir)) {
+            throw new \Exception("Not found folder to storage DYNO_FILE=" . DYNO_FILE);
+        }
         $wb = \file_put_contents(DYNO_FILE, $dynoStr);
         if (!$wb) {
             throw new \Exception("Can't write dyno-file (psr4-namespaces imported from composer)\nFile: " . DYNO_FILE);
@@ -72,15 +76,17 @@ class DynoImporter {
             $this->dynoArr = [];
         }
         $dynoArr = $this->convertComposersPSR4toDynoArr($vendorDir);
-        foreach($dynoArr as $nameSpace => $srcFoldersArr) {
-            if (!\array_key_exists($nameSpace, $this->dynoArr) || $this->dynoArr[$nameSpace] !== $srcFoldersArr) {
-                $this->dynoArr[$nameSpace] = $srcFoldersArr;
-                $this->dynoArrChanged = true;
+        if ($dynoArr) {
+            foreach($dynoArr as $nameSpace => $srcFoldersArr) {
+                if (!\array_key_exists($nameSpace, $this->dynoArr) || $this->dynoArr[$nameSpace] !== $srcFoldersArr) {
+                    $this->dynoArr[$nameSpace] = $srcFoldersArr;
+                    $this->dynoArrChanged = true;
+                }
+                if (\is_string($srcFoldersArr)) {
+                    $srcFoldersArr = [$srcFoldersArr];
+                }
+                AutoLoader::addNameSpaceBase($nameSpace, $srcFoldersArr, false);
             }
-            if (\is_string($srcFoldersArr)) {
-                $srcFoldersArr = [$srcFoldersArr];
-            }
-            AutoLoader::addNameSpaceBase($nameSpace, $srcFoldersArr, false);
         }
         return $this->dynoArrChanged;
     }
