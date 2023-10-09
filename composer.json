@@ -2,12 +2,15 @@
     "name": "dynoser/requires",
     "description": "Dependency management package",
     "type": "library",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "autoload": {
         "psr-4": {
             "dynoser\\autoload\\": "autoload/",
             "dynoser\\requires\\": "src/"
-        }
+        },
+        "files": [
+            "autoload/autoload.php"
+        ]
     },
     "require": {}
 }
