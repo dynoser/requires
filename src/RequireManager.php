@@ -176,25 +176,28 @@ class RequireManager {
         $this->requireResolvedArr = [];
         $this->aliasesArr = AutoLoadSetup::$dynoObj->getAliases();
         do {
-            [$totalDepChangesMaked, $totalDepNeedReCheck] = $this->walkAllResolve();
-            
-            // out sccess messages
-            if ($this->successMsgArr) {
-                foreach($this->successMsgArr as $msg) {
+            if ($this->composerChanged) {
+                $this->composerUpdate();
+                $this->composerChanged = false;
+            }
+            do {
+                [$totalDepChangesMaked, $totalDepNeedReCheck] = $this->walkAllResolve();
+                
+                // out success messages
+                if ($this->successMsgArr) {
+                    foreach($this->successMsgArr as $msg) {
+                        echo "$msg \n";
+                    }
+                    $this->successMsgArr = [];
+                }
+            } while ($totalDepChangesMaked || $totalDepNeedReCheck);
+            if ($this->errorsMsgArr) {
+                echo "ERRORS: \n";
+                foreach($this->errorsMsgArr as $msg) {
                     echo "$msg \n";
                 }
-                $this->successMsgArr = [];
             }
-        } while ($totalDepChangesMaked || $totalDepNeedReCheck);
-        if ($this->errorsMsgArr) {
-            echo "ERRORS: \n";
-            foreach($this->errorsMsgArr as $msg) {
-                echo "$msg \n";
-            }
-        }
-        if ($this->composerChanged) {
-            $this->composerUpdate();
-        }
+        } while ($this->composerChanged);
         return false;
     }
     
