@@ -18,6 +18,9 @@
     $vendorDir  = \defined('VENDOR_DIR') ? VENDOR_DIR  : $rootDir . '/vendor';
     $classesDir = \defined('CLASSES_DIR')? CLASSES_DIR : $rootDir . '/includes/classes';
     $extDir     = \defined('EXT_FS_DIR') ? EXT_FS_DIR  : $rootDir . '/ext';
+    if (\defined('ROOT_DIR') && \is_dir(ROOT_DIR) && !\is_dir($vendorDir)) {
+        \mkdir($vendorDir, 0777, true);
+    }
     require_once __DIR__ . "/AutoLoadSetup.php";
 
     (new \dynoser\autoload\AutoLoadSetup($rootDir, $vendorDir, $classesDir, $extDir));
