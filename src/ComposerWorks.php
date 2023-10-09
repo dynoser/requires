@@ -4,11 +4,11 @@ namespace dynoser\requires;
 use dynoser\autoload\AutoLoadSetup;
 
 trait ComposerWorks {
-    public bool $composerModified = false;
+    public bool $composerChanged = false;
     public bool $composerAutoLoaderLoaded = false;
     public string $composerPharFile = '';
     
-    public static $pkgForComposerInit = 'solomono/autoinit';
+    public string $pkgForComposerInit = 'solomono/autoinit';
 
     public $composerWorkDir = '';
     
@@ -59,9 +59,14 @@ trait ComposerWorks {
                 if (!$wb) {
                     throw new \Exception("Can't modify composer.json file: $composerJSONfile");
                 }
+                $this->composerChanged = true;
             }
         }
         return $this->composerWorkDir;
+    }
+
+    public function composerUpdate() {
+        $this->composerRun('update');
     }
     
     public function composerRun(string $command, string $workDir = null) {
@@ -72,7 +77,13 @@ trait ComposerWorks {
         $output = [];
         \exec($command, $output, $exitCode);
 
-        AutoLoadSetup::loadComposerAutoLoader();
+        if (!\is_array($output)) {
+            $output = [];
+        }
+
+        if (!$exitCode) {
+            AutoLoadSetup::loadComposerAutoLoader();
+        }
 
         return compact('output', 'exitCode');
     }
