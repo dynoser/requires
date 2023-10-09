@@ -9,7 +9,7 @@ class RequireManager {
 
     public bool $echoOn = false;
 
-    public const OUR_AUTO_LOAD_CLASS = '\dynoser\autoload\AutoLoader';
+    public const OUR_AUTO_LOADER_CLASS = '\dynoser\autoload\AutoLoader';
 
     public string $vendorDir;
     public string $extDir = '';
@@ -89,12 +89,12 @@ class RequireManager {
         $this->vendorDir = \strtr($this->vendorDir, '\\', '/');
         
         // check AutoLoader
-        $ourAutoLoadClass = self::OUR_AUTO_LOAD_CLASS;
-        if (!\class_exists($ourAutoLoadClass, false)) {
-            throw new \Exception("$ourAutoLoadClass required");
+        $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
+        if (!\class_exists($ourAutoLoaderClass, false)) {
+            throw new \Exception("$ourAutoLoaderClass required");
         }
         if (!\defined('DYNO_FILE')) {
-            throw new \Exception("$ourAutoLoadClass incorrect, DYNO_FILE constant required");
+            throw new \Exception("$ourAutoLoaderClass incorrect, DYNO_FILE constant required");
         }
         
         // classesDir resolve
@@ -256,7 +256,7 @@ class RequireManager {
     }
     
     public function checkDepends(string $fullBasePath, array $requireArr): array {
-        $ourAutoLoadClass = self::OUR_AUTO_LOAD_CLASS;
+        $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
         $depChangesMaked = 0;
         $depNeedReCheck = 0;
         $this->valuesArr = [];
@@ -286,7 +286,7 @@ class RequireManager {
             }
             $this->fullClassName = $fullClassName;
             $tryAutoLoad = empty($whatCanDoArr[self::DO_NOT_AUTO_LOAD]);            
-            $chkFile = $ourAutoLoadClass::autoLoad($fullClassName, $tryAutoLoad);
+            $chkFile = $ourAutoLoaderClass::autoLoad($fullClassName, $tryAutoLoad);
 //            if ($tryAutoLoad && \is_string($chkFile) && !\class_exists($fullClassName, false)) {
 //                require_once $chkFile;
 //            }
@@ -303,7 +303,7 @@ class RequireManager {
     
     public function depChangesMake(string $fullBasePath, string $fullClassName, array $whatCanDoArr): int {
         $depChangesMaked = 0;
-        $ourAutoLoadClass = self::OUR_AUTO_LOAD_CLASS;
+        $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
         
         //calculate $targetPath
         $targetFolder = empty($whatCanDoArr[self::TARGET_FOLDER]) ? null : $whatCanDoArr[self::TARGET_FOLDER];
