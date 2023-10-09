@@ -1,11 +1,18 @@
 <?php
 (function($file) {
-    if ($file) {
-        $rootDir = \strtr($file, '\\', '/');
-        $i = \strpos($rootDir, '/vendor/composer');
-        $rootDir = \defined('ROOT_DIR') ? ROOT_DIR : \substr($rootDir, 0, $i ? $i : 0);
+    if (\defined('ROOT_DIR')) {
+        $rootDir = ROOT_DIR;
     } else {
-        $rootDir = \defined('ROOT_DIR') ? ROOT_DIR : \dirname(__FILE__, 5);
+        $rootDir = \strtr($file ? $file : \getcwd(), '\\', '/');
+        $i = \strpos($rootDir, '/vendor/');
+        if (!$i) {
+            $rootDir = \strtr(__FILE__, '\\', '/');
+            $i = \strpos($rootDir, '/vendor/');
+            if (!$i) {
+                throw new \Exception("Can't auto-detect rootDir");
+            }
+        }
+        $rootDir = \substr($rootDir, 0, $i);
     }
     $rootDir    = \trim(strtr($rootDir, '\\', '/'), '/');
     $vendorDir  = \defined('VENDOR_DIR') ? VENDOR_DIR  : $rootDir . '/vendor';
