@@ -7,6 +7,8 @@ class RequireManager {
     use \dynoser\requires\ComposerWorks;
     use \dynoser\requires\DownLoader;
 
+    public bool $echoOn = false;
+
     public const OUR_AUTO_LOAD_CLASS = '\dynoser\autoload\AutoLoader';
 
     public string $vendorDir;
@@ -89,10 +91,10 @@ class RequireManager {
         // check AutoLoader
         $ourAutoLoadClass = self::OUR_AUTO_LOAD_CLASS;
         if (!\class_exists($ourAutoLoadClass, false)) {
-            throw new \Exception("Dynoser AutoLoader required");
+            throw new \Exception("$ourAutoLoadClass required");
         }
         if (!\defined('DYNO_FILE')) {
-            throw new \Exception('Dynoser AutoLoader incorrect, DYNO_FILE constant required');
+            throw new \Exception("$ourAutoLoadClass incorrect, DYNO_FILE constant required");
         }
         
         // classesDir resolve
