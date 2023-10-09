@@ -4,13 +4,19 @@
 
     if (!\class_exists($reqManClass, false)) {
         global $argc, $argv;
-        if (!empty($argc) && ($argc > 2 && $argv[1] === 'ROOT_DIR')) {
-            \define('ROOT_DIR', $argv[2]);
-            if (!\is_dir(ROOT_DIR)) {
-                throw new \Exception("Bad ROOT_DIR specified: " . ROOT_DIR);
+        if (!\defined('ROOT_DIR')) {
+            if (!empty($argc) && ($argc > 2 && $argv[1] === 'ROOT_DIR')) {
+                \define('ROOT_DIR', $argv[2]);
+                if (!\is_dir(ROOT_DIR)) {
+                    throw new \Exception("Bad ROOT_DIR specified: " . ROOT_DIR);
+                }
+            } else {
+                $rootDir = \getcwd();
+                if (\is_dir($rootDir . '/vendor')) {
+                    \define('ROOT_DIR', $rootDir);
+                }
             }
         }
-        
         require_once __DIR__ . '/autoload/autoload.php';
         
         // update DYNO_FILE from Composer
@@ -22,7 +28,7 @@
         // Load own classes and traits
         require_once $mySrcDir . '/ComposerWorks.php';
         require_once $mySrcDir . '/DownLoader.php';
-        $fullClassFile = $mySrcDir . '/' . $classShortName . '.php';
+        $fullClassFile = \strtr($mySrcDir, '\\', '/') . '/' . $classShortName . '.php';
         require_once $fullClassFile;
         
         // AutoLoader diagnostic
@@ -32,7 +38,7 @@
         }
         $chkFile = $ourAutoLoadClass::autoLoad($reqManClass, null);
         if ($chkFile && (!\is_string($chkFile) || \strtr($chkFile, '\\', '/') !== $fullClassFile)) {
-            throw new \Exception("Autoloader diagnostic error: different own-class files");
+            throw new \Exception("Autoloader diagnostic error:\n $chkFile \n $fullClassFile \n");
         }
 
         if (!\class_exists($reqManClass, true)) {
