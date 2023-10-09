@@ -14,6 +14,7 @@ class DynoImporter {
             if ($this->dynoArr && \is_array($this->dynoArr)) {
                 AutoLoader::$classesArr = \array_merge(AutoLoader::$classesArr, $this->dynoArr);
             } else {
+                $this->dynoArr = AutoLoader::$classesArr;
                 $this->importComposersPSR4($vendorDir);
                 $this->saveDynoFile($vendorDir);
             }
@@ -80,6 +81,7 @@ class DynoImporter {
         if (!is_array($this->dynoArr)) {
             $this->dynoArr = [];
         }
+        $this->dynoArr += AutoLoader::$classesArr;
         $dynoArr = $this->convertComposersPSR4toDynoArr($vendorDir);
         if ($dynoArr) {
             foreach($dynoArr as $nameSpace => $srcFoldersArr) {
