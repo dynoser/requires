@@ -18,7 +18,7 @@
             echo "NameSpaces Successful Updated from Composer\n";
         }
         
-        $mySrcDir = $myPkgDir . '/src';
+        $mySrcDir = __DIR__ . '/src';
         // Load own classes and traits
         require_once $mySrcDir . '/ComposerWorks.php';
         require_once $mySrcDir . '/DownLoader.php';
