@@ -102,7 +102,14 @@ class RequireManager {
         }
         $this->classesDir = \realpath($classesDir);
         if (!$this->classesDir) {
-            throw new \Exception('Classes dir not found, it is required: $classesDir');
+            $classesDir = \strtr($classesDir, '\\', '/');
+            if (\is_dir($vendorDir) && \dirname($this->vendorDir) === \dirname($classesDir, 2)) {
+                \mkdir($classesDir, 0777, true);
+            }
+            if (!\is_dir($classesDir)) {
+                throw new \Exception('Classes dir not found, it is required: $classesDir');
+            }
+            $this->classesDir = $classesDir;
         }
         $this->classesDir = \strtr($this->classesDir, '\\', '/');
         
