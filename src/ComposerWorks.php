@@ -9,6 +9,8 @@ trait ComposerWorks {
     public string $composerPharFile = '';
     
     public static $pkgForComposerInit = 'solomono/autoinit';
+
+    public $composerWorkDir = '';
     
     public function composerWorksInit() {
         AutoLoadSetup::loadComposerAutoLoader();
@@ -20,34 +22,46 @@ trait ComposerWorks {
         $result = AutoLoadSetup::updateFromComposer();
         if (\is_null($result)) {
             throw new \Exception("AutoLoader incorrect DYNO-import");
-        }
+        }        
+    }
+
+    public function getComposerRootJSONfile(): string {
+        $composerWorkDir = $this->composerWorkDir ? $this->composerWorkDir : $this->getComposerWorkDir();
+        return $composerWorkDir . '/composer.json';
     }
 
     public function getComposerWorkDir() {
-        $composerWorkDir = \dirname($this->vendorDir);
-        if (!\is_dir($composerWorkDir)) {
-            throw new \Exception("Not found composer directory");
-        }
-        $composerJSONfile = $composerWorkDir . '/composer.json';
-        if (!\is_file($composerJSONfile)) {
-            // composer init
-            $this->composerRun('init --name="' . $this->pkgForComposerInit . '"', $composerWorkDir);
+        if (!$this->composerWorkDir) {
+            $this->composerWorkDir = $composerWorkDir = \dirname($this->vendorDir);
+            if (!\is_dir($composerWorkDir)) {
+                throw new \Exception("Not found composer directory");
+            }
+            $composerJSONfile = $this->getComposerRootJSONfile();
             if (!\is_file($composerJSONfile)) {
-                throw new \Exception("Can't install composer in workDir=$composerWorkDir \nOutput: $output");
-            }
-            $dataJSON = <<<HERE
-            {
-                "name": "{$this->pkgForComposerInit}",
-                "minimum-stability": "dev",
-                "require": {}
-            }
-            HERE;
-            $wb = \file_put_contents($composerJSONfile, $dataJSON);
-            if (!$wb) {
-                throw new \Exception("Can't modify composer.json file: $composerJSONfile");
+                // composer init
+                $result = $this->composerRun('init --name="' . $this->pkgForComposerInit . '"', $composerWorkDir);
+                if ($this->echoOn) {
+                    echo \implode("\n", $result['output']) ."\n";
+                }
+                if (!\is_file($composerJSONfile)) {
+                    throw new \Exception("Can't install composer in workDir=$composerWorkDir \nOutput: $output");
+                }
+                $dataJSON = <<<HERE
+                {
+                    "name": "{$this->pkgForComposerInit}",
+                    "minimum-stability": "dev",
+                    "require": {
+                        "dynoser/requires": "*"
+                    }
+                }
+                HERE;
+                $wb = \file_put_contents($composerJSONfile, $dataJSON);
+                if (!$wb) {
+                    throw new \Exception("Can't modify composer.json file: $composerJSONfile");
+                }
             }
         }
-        return $composerWorkDir;
+        return $this->composerWorkDir;
     }
     
     public function composerRun(string $command, string $workDir = null) {
