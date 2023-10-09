@@ -22,6 +22,8 @@
             }
         }
         require_once __DIR__ . '/autoload/autoload.php';
+
+        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src');
         
         // update DYNO_FILE from Composer
         if (\dynoser\autoload\AutoLoadSetup::updateFromComposer()) {
