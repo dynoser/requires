@@ -192,6 +192,9 @@ class RequireManager {
                 echo "$msg \n";
             }
         }
+        if ($this->composerChanged) {
+            $this->composerUpdate();
+        }
         return false;
     }
     
@@ -242,7 +245,7 @@ class RequireManager {
                 }
 
             }
-            if ($this->composerModified || $this->aliasesChanged) {
+            if ($this->composerChanged || $this->aliasesChanged) {
                 AutoLoadSetup::updateFromComposer();
             }
         }
