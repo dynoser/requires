@@ -21,7 +21,9 @@
     if (\defined('ROOT_DIR') && \is_dir(ROOT_DIR) && !\is_dir($vendorDir)) {
         \mkdir($vendorDir, 0777, true);
     }
-    require_once __DIR__ . "/AutoLoadSetup.php";
+    if (!\class_exists('dynoser\\autoload\\AutoLoadSetup', false)) {
+        require_once __DIR__ . "/AutoLoadSetup.php";
+    }
 
     (new \dynoser\autoload\AutoLoadSetup($rootDir, $vendorDir, $classesDir, $extDir));
 })($file ?? '');// $file is Composer value
