@@ -15,7 +15,7 @@ class DynoImporter {
                 AutoLoader::$classesArr = \array_merge(AutoLoader::$classesArr, $this->dynoArr);
             } else {
                 $this->importComposersPSR4($vendorDir);
-                $this->saveDynoFile();
+                $this->saveDynoFile($vendorDir);
             }
         }
     }
@@ -28,17 +28,22 @@ class DynoImporter {
                 $this->dynoArrChanged = false;
             }
             $changed = $this->importComposersPSR4($vendorDir);
-            $this->saveDynoFile();
+            $this->saveDynoFile($vendorDir);
         }
         return $this->dynoArrChanged;
     }
     
-    public function saveDynoFile() {
+    public function saveDynoFile(string $vendorDir) {
         $dynoStr = '<' . "?php\n" . 'return ';
         $dynoStr .= \var_export($this->dynoArr, true) . ";\n";
         $chkDir = \dirname(DYNO_FILE);
         if (!\is_dir($chkDir)) {
-            throw new \Exception("Not found folder to storage DYNO_FILE=" . DYNO_FILE);
+            if (\is_dir($vendorDir) && \dirname($chkDir, 2) === \dirname($vendorDir)) {
+                \mkdir($chkDir,0777, true);
+            }
+            if (!\is_dir($chkDir)) {
+                throw new \Exception("Not found folder to storage DYNO_FILE=" . DYNO_FILE);
+            }
         }
         $wb = \file_put_contents(DYNO_FILE, $dynoStr);
         if (!$wb) {
