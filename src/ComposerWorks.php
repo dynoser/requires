@@ -66,7 +66,11 @@ trait ComposerWorks {
     }
 
     public function composerUpdate() {
-        $this->composerRun('update');
+        $result = $this->composerRun('update');
+        if ($this->echoOn) {
+            echo \implode("\n", $result['output']) ."\n";
+        }
+        return !$result['exitCode'];
     }
     
     public function composerRun(string $command, string $workDir = null) {
