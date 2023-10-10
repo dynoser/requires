@@ -53,6 +53,46 @@ class DynoImporter {
         $this->dynoArrChanged = false;
     }
 
+    public static function getFoldersArr(string $baseDir, $retFullPath = false): array {
+        $foldersArr = [];
+        $dirNamesArr = \glob(\realpath($baseDir) . '/*', \GLOB_ONLYDIR | \GLOB_NOSORT);
+        if (!\is_array($dirNamesArr)) {
+            throw new \Exception("Can't read directory: " . $baseDir);
+        }
+        foreach($dirNamesArr as $dirName) {
+            if ($retFullPath) {
+                $dirName = \strtr($dirName, '\\', '/');
+            } else {
+                $i = \strrpos($dirName, '/');
+                $j = \strrpos($dirName, '\\');
+                if (!$i || $j > $i) {
+                    $i = $j;
+                }
+                if (false !== $i) {
+                    $dirName = \substr($dirName, $i+1);
+                }
+            }
+            $foldersArr[] = $dirName;                
+        }
+        return $foldersArr;
+    }
+ 
+    public static function getAllVendorComposerJsonFilesArr(string $vendorDir): ?array {
+        $pkgJSONfilesArr = [];
+        $vendorsArr = self::getFoldersArr($vendorDir, false);
+        if ($vendorsArr) {
+            foreach($vendorsArr as $currVendorName) {
+                $pkgDirArr = self::getFoldersArr($vendorDir . '/' . $currVendorName, false);
+                if ($pkgDirArr) {
+                    foreach($pkgDirArr as $currPkgDir) {
+                        $pkgComposerJSONFile = $vendorDir . '/' . $currVendorName . '/' . $currPkgDir . '/composer.json';
+                        $pkgJSONfilesArr[$currVendorName . '/' . $currPkgDir] = $pkgComposerJSONFile;
+                    }
+                }
+            }
+        }
+        return $pkgJSONfilesArr;
+    }
 
     public function convertComposersPSR4toDynoArr(string $vendorDir): ?array {
         $composersPSR4file = $vendorDir . '/composer/autoload_psr4.php';
@@ -75,6 +115,39 @@ class DynoImporter {
                 $dynoArr[$nameSpace] = $srcFoldersArr;
             }
         }
+        
+        // check composer-files
+        $allVendorComposerJSONFilesArr = [];
+        $composerFilesFile = $vendorDir . '/composer/autoload_files.php';
+        if (\is_file($composerFilesFile)) {
+            $filesArr = (include $composerFilesFile);
+            if (\is_array($filesArr) && $filesArr) {
+                $dynoArr['autoload_files'] = $filesArr;
+                // get All vendor-composer.json files
+                $allVendorComposerJSONFilesArr = self::getAllVendorComposerJsonFilesArr($vendorDir);
+            }
+            // walk all vendor-composer.json files and remove [psr-4] if have [files]
+            foreach($allVendorComposerJSONFilesArr as $pkgName => $composerFullFile) {
+                if (!\is_file($composerFullFile) || \substr($pkgName, 0, 8) === 'dynoser/') {
+                    continue;
+                }
+                $JsonDataStr = \file_get_contents($composerFullFile);
+                if (!$JsonDataStr) {
+                    continue;
+                }
+                $JsonDataArr = \json_decode($JsonDataStr, true);
+                if (!\is_array($JsonDataArr)) {
+                    continue;
+                }
+                if (!empty($JsonDataArr['autoload']['files']) && !empty($JsonDataArr['autoload']['psr-4']) && \is_array($JsonDataArr['autoload']['psr-4'])) {
+                    foreach($JsonDataArr['autoload']['psr-4'] as $psr4 => $path) {
+                        $psr4 = \trim($psr4, '\\/ ');
+                        $psr4 = \strtr($psr4, '\\', '/');
+                        unset($dynoArr[$psr4]);
+                    }
+                }
+            }
+        }
         return $dynoArr;
     }
     function importComposersPSR4(string $vendorDir): bool {
@@ -83,7 +156,7 @@ class DynoImporter {
         }
         $this->dynoArr += AutoLoader::$classesArr;
         $dynoArr = $this->convertComposersPSR4toDynoArr($vendorDir);
-        if ($dynoArr) {
+        if (\is_array($dynoArr)) {
             foreach($dynoArr as $nameSpace => $srcFoldersArr) {
                 if (!\array_key_exists($nameSpace, $this->dynoArr) || $this->dynoArr[$nameSpace] !== $srcFoldersArr) {
                     $this->dynoArr[$nameSpace] = $srcFoldersArr;
