@@ -12,5 +12,7 @@
             "autoload/autoload.php"
         ]
     },
-    "require": {}
+    "require": {
+        "dynoser/helml": "*"
+    }
 }
