@@ -39,11 +39,11 @@
         // require_once $fullClassFile;
         
         // // AutoLoader diagnostic
-        // $ourAutoLoadClass = $reqManClass::OUR_AUTO_LOAD_CLASS;
-        // if (!\class_exists($ourAutoLoadClass, false)) {
-        //     throw new \Exception("Autoloader diagnostic error: NO autoload class $ourAutoLoadClass");
+        // $ourAutoLoaderClass = $reqManClass::OUR_AUTO_LOADER_CLASS;
+        // if (!\class_exists($ourAutoLoaderClass, false)) {
+        //     throw new \Exception("Autoloader diagnostic error: NO autoload class $ourAutoLoaderClass");
         // }
-        // $chkFile = $ourAutoLoadClass::autoLoad($reqManClass, null);
+        // $chkFile = $ourAutoLoaderClass::autoLoad($reqManClass, null);
         // if ($chkFile && (!\is_string($chkFile) || \strtr($chkFile, '\\', '/') !== $fullClassFile)) {
         //     throw new \Exception("Autoloader diagnostic error:\n $chkFile \n $fullClassFile \n");
         // }
