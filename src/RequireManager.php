@@ -162,7 +162,7 @@ class RequireManager {
         $dataStr = \file_get_contents($fullFileHELML);
         if ($dataStr) {
             try {
-                return \dynoser\tools\HELML::decode($dataStr);
+                return \dynoser\HELML\HELML::decode($dataStr);
             } catch (\Exception $e) {
                 return null;
             }
@@ -228,7 +228,7 @@ class RequireManager {
 
                 $fullRequireFileBase = $fullBasePath . '/' . self::REQUIRE_FILE_NAME_NO_EXT;
 
-                if (\class_exists('dynoser\\tools\\HELML', false) && !\array_key_exists('.helml', $this->requireExtArr)) {
+                if (\class_exists('dynoser\\HELML\\HELML', false) && !\array_key_exists('.helml', $this->requireExtArr)) {
                     $this->requireExtArr['.helml'] = [$this, 'loadHELMLFile'];
                     $totalDepNeedReCheck++;
                 }
