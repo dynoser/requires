@@ -52,6 +52,10 @@ trait ComposerWorks {
                     "minimum-stability": "dev",
                     "require": {
                         "dynoser/requires": "*"
+                    },
+                    "config": {
+                        "optimize-autoloader": true,
+                        "sort-packages": true
                     }
                 }
                 HERE;
