@@ -7,13 +7,14 @@ trait DownLoader {
     public string $knownUrlBasesFile;
     
     public function downLoaderInit() {
-        $this->loadKnownUrlBasesFile();
+        return $this->loadKnownUrlBasesFile();
     }
     
-    public function loadKnownUrlBasesFile() {
+    public function loadKnownUrlBasesFile(): bool {
         if (!\defined('DYNO_FILE')) {
             throw new \Exception("DYNO_FILE constant requried");
         }
+        $changed = false;
         $kfile = $this->knownUrlBaseFile = \dirname(DYNO_FILE) . '/knownurlbases.php';
         if (\is_file($kfile)) {
             $arr = (include $kfile);
@@ -21,9 +22,12 @@ trait DownLoader {
                 $this->errorPush("Illegal format file: $kfile , please remove this file and try again", null, true);
             }
             foreach($arr as $urlBase => $parameters) {
-                $this->addURLBase($urlBase, $parameters, false);
+                if ($this->addURLBase($urlBase, $parameters, false)) {
+                    $changed = true;
+                }
             }
         }
+        return $changed;
     }
     
     public function saveKnownUrlBaseFile() {
@@ -36,6 +40,10 @@ trait DownLoader {
     }
     
     public function addURLBase(string $urlBase, $parameters, bool $saveToFile = true): bool {
+        if (\is_numeric($urlBase) && \is_string($parameters) && \filter_var($parameters, \FILTER_VALIDATE_URL)) {
+            $urlBase = $parameters;
+            $parameters = true;
+        }
         if (\array_key_exists($urlBase, $this->urlBases) && $this->urlBases[$urlBase] === $parameters) {
             return false;
         }
