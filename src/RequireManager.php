@@ -10,6 +10,7 @@ class RequireManager {
     public bool $echoOn = false;
 
     public const OUR_AUTO_LOADER_CLASS = '\dynoser\autoload\AutoLoader';
+    public const HELML_CLASS = '\dynoser\HELML\HELML';
 
     public string $vendorDir;
     public string $extDir = '';
@@ -173,6 +174,19 @@ class RequireManager {
     public function run() {
         $this->composerWorksInit();
         $this->downLoaderInit();
+        
+        // check helml and install if need
+        if (!\class_exists('dynoser\\HELML\\HELML')) {
+            $this->composerUpdate();
+        }
+        if (\class_exists(self::HELML_CLASS)) {
+            if (!\array_key_exists('.helml', $this->requireExtArr)) {
+                $this->requireExtArr['.helml'] = [$this, 'loadHELMLFile'];
+            }
+        } else {
+            throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
+        }
+        
         $this->requireResolvedArr = [];
         $this->aliasesArr = AutoLoadSetup::$dynoObj->getAliases();
         do {
@@ -227,11 +241,6 @@ class RequireManager {
                 }
 
                 $fullRequireFileBase = $fullBasePath . '/' . self::REQUIRE_FILE_NAME_NO_EXT;
-
-                if (\class_exists('dynoser\\HELML\\HELML', false) && !\array_key_exists('.helml', $this->requireExtArr)) {
-                    $this->requireExtArr['.helml'] = [$this, 'loadHELMLFile'];
-                    $totalDepNeedReCheck++;
-                }
 
                 foreach($this->requireExtArr as $ext => $unpacker) {
                     $fullFile = $fullRequireFileBase . $ext;
