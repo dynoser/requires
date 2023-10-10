@@ -75,7 +75,7 @@ class AutoLoader
                 // Class or namespace is not defined
                 return $returnStatus;
             }
-            $starPath = $i ? substr($nameSpaceDir, $i) : $nameSpaceDir;
+            $starPath = $i ? \substr($nameSpaceDir, $i) : $nameSpaceDir;
         }
 
         // convert string to array (if need)
@@ -104,7 +104,7 @@ class AutoLoader
             }
             if ($firstChar === '?') {
                 // alias
-                $setAliasFrom = strtr($filePathString, '/', '\\');
+                $setAliasFrom = \strtr($filePathString, '/', '\\');
                 $filePathString = self::autoLoad(\strtr($filePathString, '/', '\\'), false);
                 if (!$filePathString) {
                     return false;
@@ -112,7 +112,7 @@ class AutoLoader
             }
             $lc2 = \substr($filePathString, -2);
             if ($lc2 === '/*') {
-                $filePathString = substr($filePathString, 0, -2) . $starPath . '/';
+                $filePathString = \substr($filePathString, 0, -2) . $starPath . '/';
             } elseif ($lc2 === '/@') {
                 $classFolder = empty($starPath) ? $classShortName : 'classes';
                 $filePathString = substr($filePathString, 0, -2) . $starPath . '/' . $classFolder . '/';
