@@ -44,7 +44,7 @@ trait ComposerWorks {
                     echo \implode("\n", $result['output']) ."\n";
                 }
                 if (!\is_file($composerJSONfile)) {
-                    throw new \Exception("Can't install composer in workDir=$composerWorkDir \nOutput: $output");
+                    throw new \Exception("Can't install composer in workDir=$composerWorkDir \nOutput: " . $result['output']);
                 }
                 $dataJSON = <<<HERE
                 {
