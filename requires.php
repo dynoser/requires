@@ -3,6 +3,8 @@
     $reqManClass = 'dynoser\\requires\\' . $classShortName;
 
     if (!\class_exists($reqManClass, false)) {
+        
+        // check command line arguments, like ROOT_DIR "path"
         global $argc, $argv;
         if (!\defined('ROOT_DIR')) {
             if (!empty($argc) && ($argc > 2 && $argv[1] === 'ROOT_DIR')) {
@@ -21,32 +23,19 @@
                 }
             }
         }
-        require_once __DIR__ . '/autoload/autoload.php';
 
-        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src');
+        // setup autoloader and vars in AutoLoadSetup:: $vendorDir, $rootDir, $classesDir, $extDir
+        require_once __DIR__ . '/autoload/autoload.php';
         
-        // update DYNO_FILE from Composer
+        // update DYNO_FILE from Composer (current classesArr + all psr4 from composer)
         if (\dynoser\autoload\AutoLoadSetup::updateFromComposer()) {
             echo "NameSpaces Successful Updated from Composer\n";
         }
-        
-        // Code for diagnostic, not required
-        // $mySrcDir = __DIR__ . '/src';
-        // // Load own classes and traits
-        // require_once $mySrcDir . '/ComposerWorks.php';
-        // require_once $mySrcDir . '/DownLoader.php';
-        // $fullClassFile = \strtr($mySrcDir, '\\', '/') . '/' . $classShortName . '.php';
-        // require_once $fullClassFile;
-        
-        // // AutoLoader diagnostic
-        // $ourAutoLoaderClass = $reqManClass::OUR_AUTO_LOADER_CLASS;
-        // if (!\class_exists($ourAutoLoaderClass, false)) {
-        //     throw new \Exception("Autoloader diagnostic error: NO autoload class $ourAutoLoaderClass");
-        // }
-        // $chkFile = $ourAutoLoaderClass::autoLoad($reqManClass, null);
-        // if ($chkFile && (!\is_string($chkFile) || \strtr($chkFile, '\\', '/') !== $fullClassFile)) {
-        //     throw new \Exception("Autoloader diagnostic error:\n $chkFile \n $fullClassFile \n");
-        // }
+
+        // Since this namespace may not be in DYNO_FILE now, add it
+        // Also, we want to use this version and not the one the composer might give
+        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
+        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
 
         if (!\class_exists($reqManClass, true)) {
             throw new \Exception("Class $reqManClass was not loaded, required");
