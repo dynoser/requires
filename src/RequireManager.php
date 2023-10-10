@@ -2,6 +2,7 @@
 namespace dynoser\requires;
 
 use dynoser\autoload\AutoLoadSetup;
+use dynoser\autoload\DynoImporter;
 
 class RequireManager {
     use \dynoser\requires\ComposerWorks;
@@ -17,20 +18,21 @@ class RequireManager {
     public bool $extChanged = true;
     public array $extListArr = []; // [n] => chortExtSubFolder
 
-    public array $aliasesArr = []; // [aliasTO] => classFROM
-    public bool $aliasesChanged = false;
-
     public string $classesDir;
     public array $classesFoldersArr = []; // [n] => fullClassesSubFolder
     public bool $classesChanged = true;
-    const CHECK_CLASSES_CLASS = 'Solomono\\Hooks';
+
+    public array $otherFoldersArr = []; // [n] => fullOtherFolderPath
+    
+    public array $aliasesArr = []; // [aliasTO] => classFROM
+    public bool $aliasesChanged = false;
 
     public array $successMsgArr = [];
     public array $errorsMsgArr = [];
     public string $fullClassName = ''; // only for messages
     public string $fullFileName = ''; // only for messages
     
-    const REQUIRE_FILE_NAME_NO_EXT = 'require';
+    const REQUIRE_FILE_NAME_NO_EXT = 'requires';
     
     const ADD_BASE_URLS = 'urlbases';
     
@@ -49,6 +51,10 @@ class RequireManager {
     const  TARGET_CURRENT = '.';
     const CHECK_FILES = 'checkfiles';
     const CLASS_FOR_ALIAS = 'alias';
+    
+    
+    const REQUIRES_FILE_SET = 'requires_file_set';
+    const REQUIRES_FILE_BASE = 'requires_file_base';
 
     public $valuesArr = [];
     
@@ -124,29 +130,6 @@ class RequireManager {
         $this->requireExtArr['.json'] = [$this, 'loadJSONfile'];
     }
 
-    function getFoldersArr(string $baseDir, $retFullPath = false): array {
-        $foldersArr = [];
-        $dirNamesArr = \glob(\realpath($baseDir) . '/*', \GLOB_ONLYDIR | \GLOB_NOSORT);
-        if (!\is_array($dirNamesArr)) {
-            throw new \Exception("Can't read directory: " . $baseDir);
-        }
-        foreach($dirNamesArr as $dirName) {
-            if ($retFullPath) {
-                $dirName = \strtr($dirName, '\\', '/');
-            } else {
-                $i = \strrpos($dirName, '/');
-                $j = \strrpos($dirName, '\\');
-                if (!$i || $j > $i) {
-                    $i = $j;
-                }
-                if (false !== $i) {
-                    $dirName = \substr($dirName, $i+1);
-                }
-            }
-            $foldersArr[] = $dirName;                
-        }
-        return $foldersArr;
-    }
     public static function loadJSONfile($fullFileJSON) {
         $dataStr = \file_get_contents($fullFileJSON);
         if ($dataStr) {
@@ -187,6 +170,13 @@ class RequireManager {
             throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
         }
         
+        // folders for scan requires-files
+        $this->otherFoldersArr = [
+            AutoLoadSetup::$rootDir,
+            AutoLoadSetup::$classesDir,
+            AutoLoadSetup::$extDir,
+        ];
+        
         $this->requireResolvedArr = [];
         $this->aliasesArr = AutoLoadSetup::$dynoObj->getAliases();
         do {
@@ -215,22 +205,15 @@ class RequireManager {
         return false;
     }
     
-    public function walkAllResolve() {
-        $this->errorsMsgArr = [];
-        $totalDepChangesMaked = 0;
-        $totalDepNeedReCheck = 0;
-
-        if ($this->classesChanged) {
-            $this->classesFoldersArr = $this->getFoldersArr($this->classesDir, true);
-            $this->classesChanged = false;
-        }
-
-        if ($this->extChanged) {
-            $this->extListArr = $this->getFoldersArr($this->extDir, false); // [n] => shortSubFolder
-            $this->extChanged = false;
-        }
-        
-        foreach(['extListArr', 'classesFoldersArr'] as $arrKey) {
+    public function scanNewRequiresArrayFiles(
+        array $whereScanThisArrKeysArr = [
+            'extListArr' => 'ext',
+            'classesFoldersArr' => 'classes',
+            'otherFoldersArr' => 'other'
+        ]
+    ): array {
+        $reqFilesArr = []; // [fullFileName] => array or null
+        foreach($whereScanThisArrKeysArr as $arrKey => $setName) {
             foreach($this->$arrKey as $pathItem) {
                 switch ($arrKey) {
                     case 'extListArr':
@@ -247,15 +230,45 @@ class RequireManager {
                     if (empty($this->requireResolvedArr[$fullFile]) && \is_file($fullFile)) {
                         $requireArr = $unpacker($fullFile);
                         if ($requireArr && \is_array($requireArr)) {
-                            $this->fullFileName = $fullFile; // for messages
-                            [$depChangesMaked, $depNeedReCheck] = $this->checkDepends($fullBasePath, $requireArr);
-                            $totalDepChangesMaked += $depChangesMaked;
-                            $totalDepNeedReCheck += $depNeedReCheck;
-                            $this->requireResolvedArr[$fullFile] = empty($depChangesMaked) && empty($depNeedReCheck);
+                            $requireArr[self::REQUIRES_FILE_SET] = $setName;
+                            $requireArr[self::REQUIRES_FILE_BASE] = $fullRequireFileBase;
+                            $reqFilesArr[$fullFile] = $requireArr;
+                        } else {
+                            $reqFilesArr[$fullFile] = null;
                         }
                     }
                 }
+            }
+        }
+        return $reqFilesArr;
+    }
+    
+    public function walkAllResolve() {
+        $this->errorsMsgArr = [];
+        $totalDepChangesMaked = 0;
+        $totalDepNeedReCheck = 0;
 
+        if ($this->classesChanged) {
+            $this->classesFoldersArr = DynoImporter::getFoldersArr($this->classesDir, true);
+            $this->classesChanged = false;
+        }
+
+        if ($this->extChanged) {
+            $this->extListArr = DynoImporter::getFoldersArr($this->extDir, false); // [n] => shortSubFolder
+            $this->extChanged = false;
+        }
+        
+        $reqFilesArr = $this->scanNewRequiresArrayFiles();
+        foreach($reqFilesArr as $fullFile => $requireArr) {
+            $this->fullFileName = $fullFile; // for messages
+            if ($requireArr) {
+                [$depChangesMaked, $depNeedReCheck] = $this->checkDepends($requireArr);
+                $totalDepChangesMaked += $depChangesMaked;
+                $totalDepNeedReCheck += $depNeedReCheck;
+                $this->requireResolvedArr[$fullFile] = empty($depChangesMaked) && empty($depNeedReCheck);
+            } else {
+                $this->errorPush("Incorrect requires$ext file");
+                $this->requireResolvedArr[$fullFile] = true;
             }
             if ($this->composerChanged || $this->aliasesChanged) {
                 AutoLoadSetup::updateFromComposer();
@@ -264,12 +277,13 @@ class RequireManager {
         return [$totalDepChangesMaked, $totalDepNeedReCheck];
     }
     
-    public function checkDepends(string $fullBasePath, array $requireArr): array {
+    public function checkDepends(array $requireArr): array {
         $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
         $depChangesMaked = 0;
         $depNeedReCheck = 0;
         $this->valuesArr = [];
         $this->fullClassName = '';
+        $fullBasePath = $requireArr[self::REQUIRES_FILE_BASE];
         foreach($requireArr as $key => $whatCanDoArr) {
             $fullClassName = \strtr($key, '/', '\\');
             if (!\strpos($fullClassName, '\\')) {
@@ -356,11 +370,14 @@ class RequireManager {
         foreach($whatCanDoArr as $stepKey => $stepArr) {
             $changesCnt = 0;
             switch ($stepKey) {
-                case self::CLASS_FOR_ALIAS:
-                case self::TARGET_FOLDER:
-                case self::DO_NOT_AUTO_LOAD:
-                case self::URL_SPEC;
-                    continue 2;
+                // let it work by default
+//                case self::REQUIRES_FILE_BASE:
+//                case self::REQUIRES_FILE_SET:
+//                case self::CLASS_FOR_ALIAS:
+//                case self::TARGET_FOLDER:
+//                case self::DO_NOT_AUTO_LOAD:
+//                case self::URL_SPEC;
+//                    continue 2;
                 case self::LOAD_FILES:
                     $urlSpecArr = $whatCanDoArr[self::URL_SPEC] ?? [];
                     if (\is_string($urlSpecArr)) {
@@ -424,6 +441,9 @@ class RequireManager {
                         $stepArr = [$stepArr];
                     }
                     $changesCnt = $this->tryLoadFromPath($fullClassName, $stepArr);
+                    break;
+                default:
+                    continue 2;
             }
             if ($changesCnt) {
                 $depChangesMaked += $changesCnt;
