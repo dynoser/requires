@@ -1,6 +1,7 @@
 <?php
 namespace dynoser\requires;
 
+use dynoser\autoload\AutoLoader;
 use dynoser\autoload\AutoLoadSetup;
 use dynoser\autoload\DynoImporter;
 
@@ -35,6 +36,8 @@ class RequireManager {
     const REQUIRE_FILE_NAME_NO_EXT = 'requires';
     
     const ADD_BASE_URLS = 'urlbases';
+    const REQ_NAMESPACES = 'namespaces';
+    const REQ_ALIASES = 'aliases';
     
     const URL_SPEC = 'url';
 
@@ -51,7 +54,6 @@ class RequireManager {
     const  TARGET_CURRENT = '.';
     const CHECK_FILES = 'checkfiles';
     const CLASS_FOR_ALIAS = 'alias';
-    
     
     const REQUIRES_FILE_SET = 'requires_file_set';
     const REQUIRES_FILE_BASE = 'requires_file_base';
@@ -302,6 +304,36 @@ class RequireManager {
                         }
                     }
                     break;
+                case self::REQ_ALIASES:
+                    foreach($whatCanDoArr as $toClassName => $fromClassName) {
+                        $toClassName = \strtr($toClassName, '/', '\\');
+                        $fromClassName = \strtr($fromClassName, '/', '\\');
+                        if (!isset($this->aliasesArr[$toClassName]) || $this->aliasesArr[$toClassName] !== $fromClassName) {
+                            $this->aliasesArr[$toClassName] = $fromClassName;
+                            $this->aliasesChanged = true;
+                            $fromClassName = '?' . $fromClassName;
+                            if (empty(AutoLoader::$classesArr[$toClassName]) || AutoLoader::$classesArr[$toClassName] !== $fromClassName) {
+                                AutoLoader::$classesArr[$toClassName] = $fromClassName;
+                                AutoLoader::$changed = true;
+                            }
+                        }
+                    }
+                    $whatCanDoArr = [];
+                    // not break
+                case self::REQ_NAMESPACES:
+                    foreach($whatCanDoArr as $namespace => $fromPath) {
+                        if (\is_string($fromPath)) {
+                            $fromPath = \strtr($fromPath, '\\', '/');
+                        }
+                        if (empty(AutoLoader::$classesArr[$namespace]) || AutoLoader::$classesArr[$namespace] !== $fromPath) {
+                            AutoLoader::$classesArr[$namespace] = $fromPath;
+                            AutoLoader::$changed = true;
+                        }
+                    }
+                    if (AutoLoader::$changed) {
+                        AutoLoadSetup::updateFromComposer();
+                        AutoLoader::$changed = false;
+                    }
                 default:
                     $this->valuesArr[$key] = $value;
                 }
