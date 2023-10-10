@@ -45,7 +45,7 @@ class RequireManager {
     const DO_NOT_UPDATE = 'donotupdate';
     const LOAD_FROM_PATH = 'frompath';
     const LOAD_BY_COMPOSER = 'composer';
-    const LOAD_REQ_FROM = 'requirefrom';
+    const LOAD_REQ_FROM = 'requiresfrom';
     const LOAD_FILES = 'files';
     const TARGET_FOLDER = 'target';
     const  TARGET_VENDOR = 'vendor';
@@ -74,7 +74,7 @@ class RequireManager {
             if ($errorCodeArr) {
                 $msg .= "Error in file: {$this->fullFileName} \nError Code: " . print_r($errorCodeArr, true);
             }
-            throw new \Exception("FATAL ERROR: $msg \n". "Other errors:" . \print_r($this->errorMsgArr, true));
+            throw new \Exception("FATAL ERROR: $msg \n". "Other errors:" . \print_r($this->errorsMsgArr, true));
         }
     }
     
@@ -234,6 +234,18 @@ class RequireManager {
                         if ($requireArr && \is_array($requireArr)) {
                             $requireArr[self::REQUIRES_FILE_SET] = $setName;
                             $requireArr[self::REQUIRES_FILE_BASE] = $fullRequireFileBase;
+                            if (\array_key_exists(self::LOAD_REQ_FROM, $requireArr)) {
+                                $reqFrom = $requireArr[self::LOAD_REQ_FROM];
+                                if (\is_string($reqFrom)) {
+                                    $reqFrom = [$reqFrom];
+                                }
+                                if (!\is_array($reqFrom)) {
+                                    $this->errorPush("Illegal requirefrom type");
+                                } else {
+                                    $downLoadedData = $this->getFromArr($reqFrom, null, null, ['.json', '.helml']);
+                                }
+                                unset($requireArr[self::LOAD_REQ_FROM]);
+                            }
                             $reqFilesArr[$fullFile] = $requireArr;
                         } else {
                             $reqFilesArr[$fullFile] = null;
@@ -269,7 +281,7 @@ class RequireManager {
                 $totalDepNeedReCheck += $depNeedReCheck;
                 $this->requireResolvedArr[$fullFile] = empty($depChangesMaked) && empty($depNeedReCheck);
             } else {
-                $this->errorPush("Incorrect requires$ext file");
+                $this->errorPush("Incorrect requires $fullFile file");
                 $this->requireResolvedArr[$fullFile] = true;
             }
             if ($this->composerChanged || $this->aliasesChanged) {
@@ -296,7 +308,7 @@ class RequireManager {
                         $value = [$value => true];
                     }
                     if (!\is_array($value)) {
-                        $this->pushError("Illegal " . self::ADD_BASE_URLS . " type", null, true);
+                        $this->errorPush("Illegal " . self::ADD_BASE_URLS . " type", null, true);
                     }
                     foreach($value as $baseUrl => $parameters) {
                         if ($this->addURLBase($baseUrl, $parameters)) {
@@ -334,6 +346,7 @@ class RequireManager {
                         AutoLoadSetup::updateFromComposer();
                         AutoLoader::$changed = false;
                     }
+                    break;
                 default:
                     $this->valuesArr[$key] = $value;
                 }
