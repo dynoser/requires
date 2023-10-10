@@ -5,6 +5,8 @@ trait DownLoader {
     public array $urlBases = []; // [url] => parameters
     
     public string $knownUrlBasesFile;
+
+    public array $cachedDownLoadedArr = []; // [url] => content
     
     public function downLoaderInit() {
         return $this->loadKnownUrlBasesFile();
@@ -59,11 +61,15 @@ trait DownLoader {
      *   true = changed
      *   false = no changes
      *   null = error
+     *   string = downloaded data (only if $oneDownLoadMode=true)
      * 
      * @param string $basePathSrc
      * @param array $filesArr
      * @param bool $doNotUpdate
-     * @return null|bool
+     * @param array $urlSpecArr
+     * @param int $minBasePathLen
+     * @param bool $oneDownLoadMode
+     * @return null|bool|string
      * @throws \Exception
      */
     public function LoadFiles(
@@ -71,7 +77,8 @@ trait DownLoader {
         array $filesArr, // short pathes
         bool $doNotUpdate = false,
         array $urlSpecArr = [],
-        int $minBasePathLen = 0
+        int $minBasePathLen = 0,
+        bool $oneDownLoadMode = false
     ) {
         $urlBasesArr = $this->urlBases;
         $urlShortArr = [];
@@ -120,12 +127,13 @@ trait DownLoader {
             $toArr[$path] = false;
         }
 
-        foreach ($urlShortArr as $urlShortAdd) {
+        foreach($urlShortArr as $urlShortAdd) {
             $success = false;
-            foreach($toArr as $path => $alreadyOk) {
+            foreach($toArr as $pathSrc => $alreadyOk) {
                 if ($alreadyOk) continue;
                 $fromArr = [];
                 foreach($this->urlBases as $urlBase => $parameters) {
+                    $path = $pathSrc;
                     $currUrlShortAdd = (\substr($urlShortAdd, -1) !== '/') ? $urlShortAdd : \substr($urlShortAdd, 0, -1);
                     $currBasePath = \strtr($basePath, '\\' , '/');
                     while(\substr($path, 0, 3) === '../') {
@@ -147,23 +155,25 @@ trait DownLoader {
                     }
                     $fromArr[] = $urlBase . $currUrlShortAdd . '/' . $path;
                 }
-                $targetFile = $this->getFromArr($fromArr, $currBasePath);
-                if (\is_string($targetFile)) {
-                    $successDownloadedCnt++;
+                if ($fromArr) {
+                    $targetFile = $this->getFromArr($fromArr, $oneDownLoadMode ? null : $currBasePath);
+                    if (\is_string($targetFile)) {
+                        if ($oneDownLoadMode) {
+                            return $targetFile; // Not file name, it is data string
+                        }
+                        $successDownloadedCnt++;
+                    }
+                    if ($targetFile) {
+                        $toArr[$path] = true; // alreadyOk
+                    }
                 }
-                if ($targetFile) {
-                    $toArr[$path] = true; // alreadyOk
-                }
-            }            
+            }
         }
 
         return $successDownloadedCnt ? true : false;
     }
     
     public function checkNoFilesCnt(string $basePath, array $filesArr): int {
-        if (!$filesArr) {
-            throw new \Exception(self::CHECK_FILES . " can't be empty");
-        }
         $noFilesCnt = 0;
         if (!\is_dir($basePath)) {
             return \count($filesArr);
@@ -201,7 +211,8 @@ trait DownLoader {
         string $targetPath = null,
         string $baseNameNoExt = null,
         array $avaExt = null,
-        bool $doNotUpdate = false
+        bool $doNotUpdate = false,
+        bool $canCache = true
     ) {
         $context = \stream_context_create([
             "ssl" => [
@@ -244,8 +255,15 @@ trait DownLoader {
             }
             // try load
             foreach($fromURLs as $fromPath) {
+                if ($canCache && isset($this->cachedDownLoadedArr['fromPath'])) {
+                    $data = $this->cachedDownLoadedArr['fromPath'];
+                    break 2;
+                }
                 $data = @\file_get_contents($fromPath, false, $context);
                 if ($data) {
+                    if ($canCache) {
+                        $this->cachedDownLoadedArr['fromPath'] = $data;
+                    }
                     break 2;
                 }
             }
