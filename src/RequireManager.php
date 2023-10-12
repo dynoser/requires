@@ -14,7 +14,7 @@ class RequireManager {
     public bool $echoOn = false;
 
     public const OUR_AUTO_LOADER_CLASS = '\dynoser\autoload\AutoLoader';
-    public const HELML_CLASS = '\dynoser\HELML\HELML';
+    public const HELML_CLASS = '\\dynoser\\HELML\\HELML';
 
     public string $vendorDir;
     public string $extDir = '';
@@ -166,8 +166,9 @@ class RequireManager {
         $this->downLoaderInit();
         
         // check helml and install if need
-        if (!\class_exists('dynoser\\HELML\\HELML')) {
+        if (!\class_exists(self::HELML_CLASS)) {
             $this->composerUpdate();
+            $this->composerRun('require dynoser/helml');
         }
         if (\class_exists(self::HELML_CLASS)) {
             if (!\array_key_exists('.helml', $this->requireExtArr)) {
