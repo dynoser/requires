@@ -44,8 +44,8 @@ class AutoLoadSetup
         }
     }
     
-    public static function loadComposerAutoLoader() {
-        if (!self::$composerAutoLoaderLoaded) {
+    public static function loadComposerAutoLoader($alwaysLoad = false) {
+        if (!self::$composerAutoLoaderLoaded || $alwaysLoad) {
             $composerAutoLoaderFile = self::$vendorDir . '/autoload.php';
             self::$composerAutoLoaderLoaded = \is_file($composerAutoLoaderFile);
             if (self::$composerAutoLoaderLoaded) {
