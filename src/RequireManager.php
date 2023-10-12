@@ -4,6 +4,7 @@ namespace dynoser\requires;
 use dynoser\autoload\AutoLoader;
 use dynoser\autoload\AutoLoadSetup;
 use dynoser\autoload\DynoImporter;
+use dynoser\requires\RequiresFiles;
 
 class RequireManager {
     use \dynoser\requires\ComposerWorks;
@@ -27,6 +28,8 @@ class RequireManager {
     
     public array $aliasesArr = []; // [aliasTO] => classFROM
     public bool $aliasesChanged = false;
+    
+    public RequiresFiles $reqFilesObj;
 
     public array $successMsgArr = [];
     public array $errorsMsgArr = [];
@@ -128,6 +131,7 @@ class RequireManager {
         $extDir = $extDir ? $extDir : AutoLoadSetup::$extDir;
         $this->extDir = (\is_string($extDir) && $extDir) ? \strtr($extDir, '\\', '/') : '';
 
+        $this->reqFilesObj = new RequiresFiles();
         
         $this->requireExtArr['.json'] = [$this, 'loadJSONfile'];
     }
@@ -171,6 +175,8 @@ class RequireManager {
         } else {
             throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
         }
+        
+        $this->reqFilesObj->clearAllRequiresCachedFiles();
         
         // folders for scan requires-files
         $this->otherFoldersArr = [
@@ -230,11 +236,10 @@ class RequireManager {
                 foreach($this->requireExtArr as $ext => $unpacker) {
                     $fullFile = $fullRequireFileBase . $ext;
                     if (empty($this->requireResolvedArr[$fullFile]) && \is_file($fullFile)) {
-                        $requireArr = $unpacker($fullFile);
-                        if ($requireArr && \is_array($requireArr)) {
-                            $requireArr[self::REQUIRES_FILE_SET] = $setName;
-                            $requireArr[self::REQUIRES_FILE_BASE] = $fullRequireFileBase;
-                            $reqFilesArr[$fullFile] = $requireArr;
+                        $requiresArr = $unpacker($fullFile);
+                        if ($requiresArr && \is_array($requiresArr)) {
+                            $this->reqFilesObj->saveToCache($fullFile, $requiresArr, $setName);
+                            $reqFilesArr[$fullFile] = $requiresArr;
                         } else {
                             $reqFilesArr[$fullFile] = null;
                         }
@@ -267,10 +272,14 @@ class RequireManager {
                 [$depChangesMaked, $depNeedReCheck] = $this->checkDepends($requireArr);
                 $totalDepChangesMaked += $depChangesMaked;
                 $totalDepNeedReCheck += $depNeedReCheck;
-                $this->requireResolvedArr[$fullFile] = empty($depChangesMaked) && empty($depNeedReCheck);
+                $isResolved = empty($depChangesMaked) && empty($depNeedReCheck);
             } else {
                 $this->errorPush("Incorrect requires$ext file");
-                $this->requireResolvedArr[$fullFile] = true;
+                $isResolved = true;
+            }
+            $this->requireResolvedArr[$fullFile] = $isResolved;
+            if ($isResolved) {
+                $this->reqFilesObj->removeCachedFile($fullFile);
             }
             if ($this->composerChanged || $this->aliasesChanged) {
                 AutoLoadSetup::updateFromComposer();
