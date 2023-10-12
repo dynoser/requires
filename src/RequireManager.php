@@ -167,7 +167,10 @@ class RequireManager {
         
         // check helml and install if need
         if (!\class_exists(self::HELML_CLASS)) {
-            $this->composerUpdate();
+            $isOk = $this->composerUpdate();
+            if (!$isOk) {
+                throw new \Exception("Composer is not OK");                
+            }
             $this->composerRun('require dynoser/helml');
         }
         if (\class_exists(self::HELML_CLASS)) {
