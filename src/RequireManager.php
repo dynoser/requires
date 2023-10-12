@@ -5,10 +5,10 @@ use dynoser\autoload\AutoLoader;
 use dynoser\autoload\AutoLoadSetup;
 use dynoser\autoload\DynoImporter;
 use dynoser\requires\RequiresFiles;
+use dynoser\requires\ComposerWorks;
 use dynoser\HELML\HELML;
 
 class RequireManager {
-    use \dynoser\requires\ComposerWorks;
     use \dynoser\requires\DownLoader;
 
     public bool $echoOn = false;
@@ -31,6 +31,7 @@ class RequireManager {
     public bool $aliasesChanged = false;
     
     public RequiresFiles $reqFilesObj;
+    public ComposerWorks $composerObj;
 
     public array $successMsgArr = [];
     public array $errorsMsgArr = [];
@@ -97,6 +98,8 @@ class RequireManager {
             $this->vendorDir = \realpath($vendorDir);
         }
         $this->vendorDir = \strtr($this->vendorDir, '\\', '/');
+
+        $this->composerObj = new ComposerWorks($this->vendorDir);
         
         // check AutoLoader
         $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
@@ -136,16 +139,16 @@ class RequireManager {
 
     
     public function run() {
-        $this->composerWorksInit();
+        $this->composerObj->composerWorksInit();
         $this->downLoaderInit();
         
         // check helml and install if need
         if (!\class_exists(self::HELML_CLASS)) {
-            $isOk = $this->composerUpdate();
+            $isOk = $this->composerObj->composerUpdate();
             if (!$isOk) {
                 throw new \Exception("Composer is not OK");                
             }
-            $this->composerRun('require dynoser/helml');
+            $this->composerObj->composerRun('require dynoser/helml');
         }
         if (\class_exists(self::HELML_CLASS)) {
             if (!\array_key_exists('.helml', $this->requireExtArr)) {
@@ -167,9 +170,9 @@ class RequireManager {
         $this->requireResolvedArr = [];
         $this->aliasesArr = AutoLoadSetup::$dynoObj->getAliases();
         do {
-            if ($this->composerChanged) {
-                $this->composerUpdate();
-                $this->composerChanged = false;
+            if ($this->composerObj->composerChanged) {
+                $this->composerObj->composerUpdate();
+                $this->composerObj->composerChanged = false;
             }
             do {
                 [$totalDepChangesMaked, $totalDepNeedReCheck] = $this->walkAllResolve();
@@ -188,7 +191,7 @@ class RequireManager {
                     echo "$msg \n";
                 }
             }
-        } while ($this->composerChanged);
+        } while ($this->composerObj->composerChanged);
         return false;
     }
     
@@ -269,7 +272,7 @@ class RequireManager {
             if ($isResolved) {
                 $this->reqFilesObj->removeCachedFile($fullFile);
             }
-            if ($this->composerChanged || $this->aliasesChanged) {
+            if ($this->composerObj->composerChanged || $this->aliasesChanged) {
                 AutoLoadSetup::updateFromComposer();
             }
         }
@@ -436,7 +439,7 @@ class RequireManager {
                     }
                     $checkNoFilesCntBefore = $this->checkNoFilesCnt($basePath, $whatCanDoArr[self::CHECK_FILES]);
                     if ($checkNoFilesCntBefore) {
-                        $output = $this->composerRun('require --ignore-platform-reqs ' . \trim($compoReq));
+                        $output = $this->composerObj->composerRun('require --ignore-platform-reqs ' . \trim($compoReq));
                         $checkNoFilesCntAfter = $this->checkNoFilesCnt($basePath, $whatCanDoArr[self::CHECK_FILES]);
                         if ($checkNoFilesCntAfter !== $checkNoFilesCntBefore) {
                             $changesCnt++;
