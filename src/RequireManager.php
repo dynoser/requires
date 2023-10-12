@@ -5,6 +5,7 @@ use dynoser\autoload\AutoLoader;
 use dynoser\autoload\AutoLoadSetup;
 use dynoser\autoload\DynoImporter;
 use dynoser\requires\RequiresFiles;
+use dynoser\HELML\HELML;
 
 class RequireManager {
     use \dynoser\requires\ComposerWorks;
@@ -152,7 +153,7 @@ class RequireManager {
         $dataStr = \file_get_contents($fullFileHELML);
         if ($dataStr) {
             try {
-                return \dynoser\HELML\HELML::decode($dataStr);
+                return HELML::decode($dataStr);
             } catch (\Exception $e) {
                 return null;
             }
@@ -274,7 +275,7 @@ class RequireManager {
                 $totalDepNeedReCheck += $depNeedReCheck;
                 $isResolved = empty($depChangesMaked) && empty($depNeedReCheck);
             } else {
-                $this->errorPush("Incorrect requires$ext file");
+                $this->errorPush("Incorrect $fullFile file");
                 $isResolved = true;
             }
             $this->requireResolvedArr[$fullFile] = $isResolved;
