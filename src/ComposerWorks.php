@@ -109,8 +109,7 @@ class ComposerWorks {
         }
 
         if (!$exitCode) {
-            AutoLoadSetup::$composerAutoLoaderLoaded = false;
-            AutoLoadSetup::loadComposerAutoLoader();
+            AutoLoadSetup::loadComposerAutoLoader(true);
         }
 
         return compact('output', 'exitCode');
