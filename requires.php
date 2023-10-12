@@ -1,4 +1,7 @@
 <?php
+use dynoser\autoload\AutoLoader;
+use dynoser\autoload\AutoLoadSetup;
+
 (function ($classShortName) {
     $reqManClass = 'dynoser\\requires\\' . $classShortName;
 
@@ -26,16 +29,21 @@
 
         // setup autoloader and vars in AutoLoadSetup:: $vendorDir, $rootDir, $classesDir, $extDir
         require_once __DIR__ . '/autoload/autoload.php';
+
+        $setOwnNameSpaces = function() {
+            // Since this namespace may not be in DYNO_FILE now, add it
+            // Also, we want to use this version and not the one the composer might give
+            AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
+            AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
+        };
+        $setOwnNameSpaces();
         
         // update DYNO_FILE from Composer (current classesArr + all psr4 from composer)
-        if (\dynoser\autoload\AutoLoadSetup::updateFromComposer()) {
+        if (AutoLoadSetup::updateFromComposer()) {
             echo "NameSpaces Successful Updated from Composer\n";
         }
 
-        // Since this namespace may not be in DYNO_FILE now, add it
-        // Also, we want to use this version and not the one the composer might give
-        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
-        \dynoser\autoload\AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
+        $setOwnNameSpaces();
 
         if (!\class_exists($reqManClass, true)) {
             throw new \Exception("Class $reqManClass was not loaded, required");
