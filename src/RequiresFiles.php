@@ -8,9 +8,15 @@ class RequiresFiles {
     
     public string $cacheBaseDir = '';
     public string $requiresCacheDir = '';
+
+    public bool $changed = false;
     
     const INT_SUB_DIR = '/requires';
     const REQ_FILES_EXT = '-req.json';
+
+    const REQUIRES_FILE_SET  = 'requires_file_set';
+    const REQUIRES_FILE_BASE = 'requires_file_base';
+    const REQUIRES_FILE_HASH = 'requires_file_hash';
     
     public function __construct($cacheDir = null) {
         if (!$cacheDir) {
@@ -103,15 +109,27 @@ class RequiresFiles {
         return $cacheFileName;
     }
     
-    public function saveToCache(string $fromFileOrPath, array & $requiresArr, string $setName = null) {
-        $requiresArr[RequireManager::REQUIRES_FILE_BASE] = $fromFileOrPath;
-        $requiresArr[RequireManager::REQUIRES_FILE_SET] = $setName ? $setName : 'unknown';
+    public function saveToCache(string $fromFileOrPath, array & $requiresArr, string $fileHashHex = null, string $setName = null) {
+        $requiresArr[self::REQUIRES_FILE_BASE] = $fromFileOrPath;
+        if ($fileHashHex) {
+            $requiresArr[self::REQUIRES_FILE_HASH] = $fileHashHex;
+        } elseif (!\array_key_exists(self::REQUIRES_FILE_HASH, $requiresArr)) {
+            throw new \Exception("Code error: no hash key=" . self::REQUIRES_FILE_HASH);
+        }
+        $requiresArr[self::REQUIRES_FILE_SET] = $setName ? $setName : 'unknown';
         $cacheFileName = $this->calcCacheFileName($fromFileOrPath);
         $dataStr = \json_encode($requiresArr, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE);
-        $wb = \file_put_contents($cacheFileName, $dataStr);
-        if (!$wb) {
-            throw new \Exception("Can't save requires-cache file: $cacheFileName");
+        if (\is_file($cacheFileName)) {
+            $oldData = \file_get_contents($cacheFileName);
         }
+        if ($oldData !== $dataStr) {
+            $wb = \file_put_contents($cacheFileName, $dataStr);
+            if (!$wb) {
+                throw new \Exception("Can't save requires-cache file: $cacheFileName");
+            }
+            $this->changed = true;
+        }
+        return $cacheFileName;
     }
     
     public function loadFromCache(string $fromFileOrPath): ?array {
