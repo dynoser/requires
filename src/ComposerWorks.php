@@ -3,7 +3,12 @@ namespace dynoser\requires;
 
 use dynoser\autoload\AutoLoadSetup;
 
-trait ComposerWorks {
+class ComposerWorks {
+    public static $i = null; // last instance of self ($this)
+
+    public string $vendorDir = '';
+    public bool $echoOn = true;
+
     public bool $composerChanged = false;
     public bool $composerAutoLoaderLoaded = false;
     public string $composerPharFile = '';
@@ -13,6 +18,13 @@ trait ComposerWorks {
     public string $pkgForComposerInit = 'solomono/autoinit';
 
     public $composerWorkDir = '';
+
+    public function __construct($vendorDir, $echoOn = true)
+    {
+        $this->vendorDir = $vendorDir;
+        $this->echoOn = $echoOn;
+        self::$i = $this;
+    }
     
     public function composerWorksInit() {
         if (!\extension_loaded('openssl')) {
@@ -187,7 +199,7 @@ trait ComposerWorks {
                 foreach($rows as $row) {
                     $i = strpos($row, 'ile:');
                     if ($i) {
-                        self::$phpIni = \trim(\substr($row, $i+5));
+                        self::$phpIni = \trim(\substr($row, $i + 5));
                         break;
                     }
                 }
