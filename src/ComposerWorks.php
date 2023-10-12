@@ -16,7 +16,7 @@ trait ComposerWorks {
     
     public function composerWorksInit() {
         if (!\extension_loaded('openssl')) {
-            throw new Exception("The openssl extension is required for SSL/TLS protection but is not available.");
+            throw new \Exception("The openssl extension is required for SSL/TLS protection but is not available.");
         }
         AutoLoadSetup::loadComposerAutoLoader();
         $composerWorkDir = $this->getComposerWorkDir();
@@ -222,7 +222,7 @@ trait ComposerWorks {
             $composerFromURL = 'https://getcomposer.org/installer';
             \copy($composerFromURL, $сomposerSetupFullFile);
             if (!\file_exists($сomposerSetupFullFile)) {
-                throw new Exception("Can't download $composerSetupName from $composerFromURL");
+                throw new \Exception("Can't download $composerSetupName from $composerFromURL");
             }
         }
 
