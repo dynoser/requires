@@ -55,7 +55,11 @@ class DynoImporter {
 
     public static function getFoldersArr(string $baseDir, $retFullPath = false): array {
         $foldersArr = [];
-        $dirNamesArr = \glob(\realpath($baseDir) . '/*', \GLOB_ONLYDIR | \GLOB_NOSORT);
+        $realBaseDir = \realpath($baseDir);
+        if (!$realBaseDir) {
+            return [];
+        }
+        $dirNamesArr = \glob(\strtr($realBaseDir, '\\', '/') . '/*', \GLOB_ONLYDIR | \GLOB_NOSORT);
         if (!\is_array($dirNamesArr)) {
             throw new \Exception("Can't read directory: " . $baseDir);
         }
