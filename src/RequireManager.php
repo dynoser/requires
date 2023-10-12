@@ -58,9 +58,6 @@ class RequireManager {
     const  TARGET_CURRENT = '.';
     const CHECK_FILES = 'checkfiles';
     const CLASS_FOR_ALIAS = 'alias';
-    
-    const REQUIRES_FILE_SET = 'requires_file_set';
-    const REQUIRES_FILE_BASE = 'requires_file_base';
 
     public $valuesArr = [];
     
@@ -134,32 +131,9 @@ class RequireManager {
 
         $this->reqFilesObj = new RequiresFiles();
         
-        $this->requireExtArr['.json'] = [$this, 'loadJSONfile'];
+        $this->requireExtArr['.json'] = 0;
     }
 
-    public static function loadJSONfile($fullFileJSON) {
-        $dataStr = \file_get_contents($fullFileJSON);
-        if ($dataStr) {
-            try {
-                return \json_decode($dataStr, \JSON_THROW_ON_ERROR || \JSON_OBJECT_AS_ARRAY);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-        return null;
-    }
-    
-    public static function loadHELMLfile($fullFileHELML) {
-        $dataStr = \file_get_contents($fullFileHELML);
-        if ($dataStr) {
-            try {
-                return HELML::decode($dataStr);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-        return null;
-    }
     
     public function run() {
         $this->composerWorksInit();
@@ -175,7 +149,7 @@ class RequireManager {
         }
         if (\class_exists(self::HELML_CLASS)) {
             if (!\array_key_exists('.helml', $this->requireExtArr)) {
-                $this->requireExtArr['.helml'] = [$this, 'loadHELMLFile'];
+                $this->requireExtArr['.helml'] = 1;
             }
         } else {
             throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
@@ -238,12 +212,21 @@ class RequireManager {
 
                 $fullRequireFileBase = $fullBasePath . '/' . self::REQUIRE_FILE_NAME_NO_EXT;
 
-                foreach($this->requireExtArr as $ext => $unpacker) {
+                foreach($this->requireExtArr as $ext => $notJSON) {
                     $fullFile = $fullRequireFileBase . $ext;
                     if (empty($this->requireResolvedArr[$fullFile]) && \is_file($fullFile)) {
-                        $requiresArr = $unpacker($fullFile);
+                        $dataStr = \file_get_contents($fullFile);
+                        if ($dataStr) {
+                            try {
+                                $requiresArr = $notJSON ? HELML::decode($dataStr)
+                                    : \json_decode($dataStr, \JSON_THROW_ON_ERROR || \JSON_OBJECT_AS_ARRAY);
+                                $hashHex = hash('sha256', $dataStr, false);
+                            } catch (\Exception $e) {
+                                $requiresArr = null;
+                            }
+                        }
                         if ($requiresArr && \is_array($requiresArr)) {
-                            $this->reqFilesObj->saveToCache($fullFile, $requiresArr, $setName);
+                            $this->reqFilesObj->saveToCache($fullFile, $requiresArr, $hashHex, $setName);
                             $reqFilesArr[$fullFile] = $requiresArr;
                         } else {
                             $reqFilesArr[$fullFile] = null;
@@ -299,7 +282,7 @@ class RequireManager {
         $depNeedReCheck = 0;
         $this->valuesArr = [];
         $this->fullClassName = '';
-        $fullBasePath = $requireArr[self::REQUIRES_FILE_BASE];
+        $fullBasePath = $requireArr[RequiresFiles::REQUIRES_FILE_BASE];
         foreach($requireArr as $key => $whatCanDoArr) {
             $fullClassName = \strtr($key, '/', '\\');
             if (!\strpos($fullClassName, '\\')) {
