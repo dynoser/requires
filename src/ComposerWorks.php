@@ -131,9 +131,11 @@ trait ComposerWorks {
             }
         }
         if (!$foundComposerPharFiles && $composerWorkDir) {
-            $chkVendorPhar = $composerWorkDir . '/composer.phar';
-            if (\is_file($chkVendorPhar)) {
-                return $chkVendorPhar;
+            foreach([$composerWorkDir . '/vendor', $composerWorkDir] as $chkDir) {
+                $chkVendorPhar = $chkDir . '/composer.phar';
+                if (\is_file($chkVendorPhar)) {
+                    return $chkVendorPhar;
+                }
             }
         }
 
@@ -203,30 +205,36 @@ trait ComposerWorks {
         if (!\is_dir($composerWorkDir)) {
             throw new \Exception("Not found composer directory");
         }
+        $composerInstallDir = $composerWorkDir . '/vendor';
+        if (!\is_dir($composerInstallDir) && !\mkdir($composerInstallDir)) {
+            $composerInstallDir = $composerWorkDir;
+        }
 
         $phpRun = self::getPHP();
 
         $oldcwd = \getcwd();
-        \chdir($composerWorkDir);
+        \chdir($composerInstallDir);
 
         $composerSetupName = 'composer-setup.php';
+        $сomposerSetupFullFile = $composerInstallDir . '/' . $composerSetupName;
+
         if (!\file_exists($composerSetupName)) {
             $composerFromURL = 'https://getcomposer.org/installer';
-            \copy($composerFromURL, $composerSetupName);
-            if (!\file_exists($composerSetupName)) {
+            \copy($composerFromURL, $сomposerSetupFullFile);
+            if (!\file_exists($сomposerSetupFullFile)) {
                 throw new Exception("Can't download $composerSetupName from $composerFromURL");
             }
         }
 
         $signature = \file_get_contents('https://composer.github.io/installer.sig');
-        if (\hash_file('SHA384', $composerSetupName) === $signature) {
+        if (\hash_file('SHA384', $сomposerSetupFullFile) === $signature) {
             // run composer-setup.php
-            $runStr = "$phpRun -d xdebug.mode=off -f \"{$composerWorkDir}/{$composerSetupName}\"";
+            $runStr = "$phpRun -d xdebug.mode=off -f \"$сomposerSetupFullFile\"";
             \exec($runStr);
         } else {
             throw new \Exception('Illegal composer signature, setup cancelled');
         }
-        \unlink($composerSetupName);
+        \unlink($сomposerSetupFullFile);
 
         $composerPhar = self::whereComposerPhar($composerWorkDir);
         if (!$composerPhar) {
