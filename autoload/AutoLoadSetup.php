@@ -22,8 +22,8 @@ class AutoLoadSetup
             \define('DYNO_FILE', $rootDir . '/storage/int/dynoload.php');
         }
 
-        if (\class_exists('dynoser\autoload\AutoLoader', false)) {
-            \spl_autoload_unregister(['\dynoser\autoload\AutoLoader','autoLoadSpl']);
+        if (\class_exists('dynoser\\autoload\\AutoLoader', false)) {
+            \spl_autoload_unregister(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl']);
         } else {
             require_once __DIR__ . '/AutoLoader.php';
 
@@ -37,7 +37,7 @@ class AutoLoadSetup
             ];
         }
 
-        \spl_autoload_register(['\dynoser\autoload\AutoLoader','autoLoadSpl'], true, true);
+        \spl_autoload_register(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl'], true, true);
 
         if (DYNO_FILE && \class_exists('dynoser\\autoload\\DynoImporter')) {
             self::$dynoObj = new DynoImporter($vendorDir);
@@ -51,8 +51,8 @@ class AutoLoadSetup
             if (self::$composerAutoLoaderLoaded) {
                 require_once $composerAutoLoaderFile;
                 // set our autoloader as first
-                \spl_autoload_unregister(['\dynoser\autoload\AutoLoader','autoLoadSpl']);
-                \spl_autoload_register(['\dynoser\autoload\AutoLoader','autoLoadSpl'], true, true);
+                \spl_autoload_unregister(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl']);
+                \spl_autoload_register(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl'], true, true);
             }
         }
         return self::$composerAutoLoaderLoaded;
