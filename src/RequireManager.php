@@ -160,15 +160,14 @@ class RequireManager {
         }
 
         // check dynoser/requires installed in vendor
-        if (!\defined('DONT_RESET_NS')) {
-            $myFullName = \strtr(__FILE__, '\\', '/');
-            $myShortName = \basename($myFullName);
-            $myVendorFull = $this->vendorDir . '/dynoser/requires/src/' . $myShortName;
-            if ($myFullName !== $myVendorFull && !\is_file($myVendorFull)) {
-                $this->composerObj->composerRun('require dynoser/requires');
-                if (!\is_file($myVendorFull)) {
-                    throw new \Exception("Not found $myVendorFull after 'composer require dynoser/helml'");
-                }
+        $myFullName = \strtr(__FILE__, '\\', '/');
+        $myShortName = \basename($myFullName);
+        $myVendorFull = $this->vendorDir . '/dynoser/requires/src/' . $myShortName;
+        $meNotInVendor = ($myFullName !== $myVendorFull) && !\is_file($myVendorFull);
+        if ($meNotInVendor && !\defined('DONT_INSTALL_REQUIRES_TO_VENDOR')) {
+            $this->composerObj->composerRun('require dynoser/requires');
+            if (!\is_file($myVendorFull)) {
+                throw new \Exception("Not found $myVendorFull after 'composer require dynoser/helml'");
             }
         }
         
