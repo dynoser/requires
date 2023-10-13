@@ -165,7 +165,7 @@ class RequireManager {
             $myShortName = \basename($myFullName);
             $myVendorFull = $this->vendorDir . '/dynoser/requires/src/' . $myShortName;
             if ($myFullName !== $myVendorFull && !\is_file($myVendorFull)) {
-                $this->composerObj->composerRun('require dynoser/helml');
+                $this->composerObj->composerRun('require dynoser/requires');
                 if (!\is_file($myVendorFull)) {
                     throw new \Exception("Not found $myVendorFull after 'composer require dynoser/helml'");
                 }
