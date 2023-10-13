@@ -158,6 +158,19 @@ class RequireManager {
         } else {
             throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
         }
+
+        // check dynoser/requires installed in vendor
+        if (!\defined('DONT_RESET_NS')) {
+            $myFullName = \strtr(__FILE__, '\\', '/');
+            $myShortName = \basename($myFullName);
+            $myVendorFull = $this->vendorDir . '/dynoser/requires/src/' . $myShortName;
+            if ($myFullName !== $myVendorFull && !\is_file($myVendorFull)) {
+                $this->composerObj->composerRun('require dynoser/helml');
+                if (!\is_file($myVendorFull)) {
+                    throw new \Exception("Not found $myVendorFull after 'composer require dynoser/helml'");
+                }
+            }
+        }
         
         $this->reqFilesObj->clearAllRequiresCachedFiles();
         
