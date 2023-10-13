@@ -154,7 +154,8 @@ class DynoImporter {
         }
         return $dynoArr;
     }
-    function importComposersPSR4(string $vendorDir): bool {
+
+    public function importComposersPSR4(string $vendorDir): bool {
         if (!is_array($this->dynoArr)) {
             $this->dynoArr = [];
         }
