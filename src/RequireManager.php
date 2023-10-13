@@ -149,7 +149,7 @@ class RequireManager {
                 throw new \Exception("Composer is not OK");                
             }
             $this->composerObj->composerRun('require dynoser/helml');
-            AutoLoadSetup::loadComposerAutoLoader(true);
+            AutoLoadSetup::updateFromComposer();
         }
         if (\class_exists(self::HELML_CLASS)) {
             if (!\array_key_exists('.helml', $this->requireExtArr)) {
