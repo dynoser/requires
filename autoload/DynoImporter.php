@@ -169,15 +169,25 @@ class DynoImporter {
                         $dynoArr[$key][$pkgName] = $extraArr[$key];
                     }
                 }
-                foreach($dynoArr['dyno-aliases'] as $toClassName => $fromClassName) {
-                    if (\is_string($fromClassName)) {
-                        $toClassName = \trim(\strtr($toClassName, '/', '\\'), ' \\');
-                        $dynoArr[$toClassName] = '?' . \strtr($fromClassName, '/', '\\');
+                foreach($dynoArr['dyno-aliases'] as $currPkg => $aliasesArr) {
+                    if (\is_string($aliasesArr)) {
+                        $aliasesArr = [$aliasesArr];
+                    }
+                    if (\is_array($aliasesArr)) {
+                        foreach($aliasesArr as $toClassName => $fromClassName) {
+                            if (\is_string($fromClassName)) {
+                                $toClassName = \trim(\strtr($toClassName, '/', '\\'), ' \\');
+                                $dynoArr[$toClassName] = '?' . \strtr($fromClassName, '/', '\\');
+                            }
+                        }
+                        unset($dynoArr['dyno-aliases'][$currPkg]); //already imported
                     }
                 }
-                unset($dynoArr['dyno-aliases']); //already imported above
-                unset($dynoArr['autoload-files']); // no need more
             }
+            if (empty($dynoArr['dyno-aliases'])) {
+                unset($dynoArr['dyno-aliases']);
+            }
+            unset($dynoArr['autoload-files']); // no need more
         }
         return $dynoArr;
     }
