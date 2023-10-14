@@ -120,17 +120,16 @@ class DynoImporter {
             }
         }
         
-        // check composer-files
-        // $allVendorComposerJSONFilesArr = [];
-        // $composerFilesFile = $vendorDir . '/composer/autoload_files.php';
-        // if (\is_file($composerFilesFile)) {
-        //     $composerAutoLoadFilesArr = (include $composerFilesFile);
-        //     if (\is_array($composerAutoLoadFilesArr) && $composerAutoLoadFilesArr) {
-        //         foreach($composerAutoLoadFilesArr as $key => $file) {
-        //             $composerAutoLoadFilesArr[$key] = \strtr($file, '\\', '/');
-        //         }
-        //     }
-        // }
+        // check composer autoload_files
+        $composerFilesFile = $vendorDir . '/composer/autoload_files.php';
+        if (\is_file($composerFilesFile)) {
+            $composerAutoLoadFilesArr = (include $composerFilesFile);
+            if (\is_array($composerAutoLoadFilesArr) && $composerAutoLoadFilesArr) {
+                foreach($composerAutoLoadFilesArr as $key => $file) {
+                     $composerAutoLoadFilesArr[$key] = \strtr($file, '\\', '/');
+                }
+            }
+        }        
         // $dynoArr['autoload-files'] = $composerAutoLoadFilesArr ? $composerAutoLoadFilesArr : [];
         $dynoArr['autoload-files'] = [];
         $dynoArr['dyno-update'] = [];
@@ -140,6 +139,9 @@ class DynoImporter {
         $allVendorComposerJSONFilesArr = self::getAllVendorComposerJsonFilesArr($vendorDir);
         // walk all vendor-composer.json files and remove [psr-4] if have [files]
         foreach($allVendorComposerJSONFilesArr as $pkgName => $composerFullFile) {
+            if (!\is_file($composerFullFile)) {
+                continue;
+            }
             $JsonDataStr = \file_get_contents($composerFullFile);
             if (!$JsonDataStr) {
                 continue;
@@ -148,10 +150,7 @@ class DynoImporter {
             if (!\is_array($JsonDataArr)) {
                 continue;
             }
-            if (!\is_file($composerFullFile) || \substr($pkgName, 0, 8) === 'dynoser/') {
-                continue;
-            }
-            if (!empty($JsonDataArr['autoload']['files'])) {
+            if (!empty($JsonDataArr['autoload']['files']) && \substr($pkgName, 0, 8) !== 'dynoser/') {
                 $dynoArr['autoload-files'][$pkgName] = $JsonDataArr['autoload']['files'];
 
                 if (!empty($JsonDataArr['autoload']['psr-4']) && \is_array($JsonDataArr['autoload']['psr-4'])) {
