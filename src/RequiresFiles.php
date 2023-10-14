@@ -119,9 +119,7 @@ class RequiresFiles {
         $requiresArr[self::REQUIRES_FILE_SET] = $setName ? $setName : 'unknown';
         $cacheFileName = $this->calcCacheFileName($fromFileOrPath);
         $dataStr = \json_encode($requiresArr, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE);
-        if (\is_file($cacheFileName)) {
-            $oldData = \file_get_contents($cacheFileName);
-        }
+        $oldData = \is_file($cacheFileName) ? \file_get_contents($cacheFileName) : null;
         if ($oldData !== $dataStr) {
             $wb = \file_put_contents($cacheFileName, $dataStr);
             if (!$wb) {
