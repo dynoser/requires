@@ -47,6 +47,44 @@ class ComposerWorks {
         return $composerWorkDir . '/composer.json';
     }
 
+    public function getComposerRootJSONArr(): ?array {
+        $composerJSONfile = $this->getComposerRootJSONfile();
+        if (!\is_file($composerJSONfile)) {
+            return null;
+        }
+        $JsonDataStr = \file_get_contents($composerJSONfile);
+        if (!$JsonDataStr) {
+            return null;
+        }
+        $JsonDataArr = \json_decode($JsonDataStr, true);
+        if (!\is_array($JsonDataArr)) {
+            return null;
+        }
+        return $JsonDataArr;
+    }
+
+    /**
+     * Return:
+     *  null - not in root-composer.json
+     *  string ""   - found in root-composer.json, but not found pkg-vendor-Dir
+     *  string fullComposerJsonFile - found in root-composer.json and found pkg-vendor-Dir
+     */
+    public function getPkgComposerJsonFile(string $pkgName, bool $checkFileExist = true): ?string {
+        $rootArr = $this->getComposerRootJSONArr();
+        if (empty($rootArr['require'][$pkgName])) {
+            return null;
+        }
+        $pkgDir = $this->vendorDir . '/' . $pkgName;
+        if (!\is_dir($pkgDir)) {
+            return "";
+        }
+        $fullComposerJsonFile = $pkgDir . '/composer.json';
+        if ($checkFileExist && !\file_exists($fullComposerJsonFile)) {
+            return "";
+        }
+        return $fullComposerJsonFile;
+    }
+
     public function getComposerWorkDir() {
         if (!$this->composerWorkDir) {
             $this->composerWorkDir = $composerWorkDir = \dirname($this->vendorDir);
