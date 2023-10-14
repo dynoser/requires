@@ -49,7 +49,7 @@ class AutoLoadSetup
             $composerAutoLoaderFile = self::$vendorDir . '/autoload.php';
             self::$composerAutoLoaderLoaded = \is_file($composerAutoLoaderFile);
             if (self::$composerAutoLoaderLoaded) {
-                require_once $composerAutoLoaderFile;
+                require $composerAutoLoaderFile;
                 // set our autoloader as first
                 \spl_autoload_unregister(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl']);
                 \spl_autoload_register(['\\dynoser\\autoload\\AutoLoader','autoLoadSpl'], true, true);

@@ -31,12 +31,10 @@ use dynoser\autoload\AutoLoadSetup;
         require_once __DIR__ . '/autoload/autoload.php';
 
         $setOwnNameSpaces = function() {
-            if (!\defined('DONT_RESET_NS')) {
-                // Since this namespace may not be in DYNO_FILE now, add it
-                // Also, we want to use this version and not the one the composer might give
-                AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
-                AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
-            }
+            // Since this namespace may not be in DYNO_FILE now, add it
+            // Also, we want to use this version and not the one the composer might give
+            AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
+            AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
         };
         $setOwnNameSpaces();
         
@@ -45,7 +43,9 @@ use dynoser\autoload\AutoLoadSetup;
             echo "NameSpaces Successful Updated from Composer\n";
         }
 
-        $setOwnNameSpaces();
+        if (!\defined('DONT_RESET_NS')) {
+            $setOwnNameSpaces();
+        }
 
         if (!\class_exists($reqManClass, true)) {
             throw new \Exception("Class $reqManClass was not loaded, required");
