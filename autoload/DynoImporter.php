@@ -132,6 +132,7 @@ class DynoImporter {
         }        
         // $dynoArr['autoload-files'] = $composerAutoLoadFilesArr ? $composerAutoLoadFilesArr : [];
         $dynoArr['autoload-files'] = [];
+        $dynoArr['dyno-aliases'] = [];
         $dynoArr['dyno-update'] = [];
         $dynoArr['dyno-requires'] = [];
 
@@ -163,9 +164,15 @@ class DynoImporter {
             }
             if (!empty($JsonDataArr['extra']) && \is_array($JsonDataArr['extra'])) {
                 $extraArr = $JsonDataArr['extra'];
-                foreach(['dyno-update', 'dyno-requires'] as $key) {
+                foreach(['dyno-update', 'dyno-requires', 'dyno-aliases'] as $key) {
                     if (array_key_exists($key, $extraArr)) {
                         $dynoArr[$key][$pkgName] = $extraArr[$key];
+                    }
+                }
+                foreach($dynoArr['dyno-aliases'] as $toClassName => $fromClassName) {
+                    if (\is_string($fromClassName)) {
+                        $toClassName = \trim(\strtr($toClassName, '/', '\\'), ' \\');
+                        $dynoArr[$toClassName] = '?' . \strtr($fromClassName, '/', '\\');
                     }
                 }
             }
