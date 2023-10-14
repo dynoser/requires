@@ -175,6 +175,8 @@ class DynoImporter {
                         $dynoArr[$toClassName] = '?' . \strtr($fromClassName, '/', '\\');
                     }
                 }
+                unset($dynoArr['dyno-aliases']); //already imported above
+                unset($dynoArr['autoload-files']); // no need more
             }
         }
         return $dynoArr;
