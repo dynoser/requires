@@ -184,11 +184,11 @@ class DynoImporter {
                     }
                 }
             }
-            if (empty($dynoArr['dyno-aliases'])) {
-                unset($dynoArr['dyno-aliases']);
-            }
-            unset($dynoArr['autoload-files']); // no need more
         }
+        if (empty($dynoArr['dyno-aliases'])) {
+            unset($dynoArr['dyno-aliases']);
+        }
+        unset($dynoArr['autoload-files']); // no need more
         return $dynoArr;
     }
 
