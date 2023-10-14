@@ -364,8 +364,9 @@ class RequireManager {
             }
             // class not loaded, need to resolve dep
             $depChangesMaked += $this->depChangesMake($fullBasePath, $fullClassName, $whatCanDoArr);
-            
-            $depNeedReCheck++;
+            if ($depChangesMaked) {
+                $depNeedReCheck++;
+            }
         }
         return [$depChangesMaked, $depNeedReCheck];
     }
@@ -443,22 +444,22 @@ class RequireManager {
                     if (!\is_string($compoReq) || !\strpos($compoReq, '/')) {
                         throw new \Exception("Illegal name for composer package: $compoReq");
                     }
-                    if (!\array_key_exists(self::CHECK_FILES, $whatCanDoArr)) {
-                        throw new \Exception("Key " . self::CHECK_FILES . " is requred for composer installing mode");
-                    }
-                    $basePath = $this->vendorDir . '/' . $compoReq;
-                    if (empty($whatCanDoArr[self::CHECK_FILES])) {
-                        throw new \Exception('[' . self::CHECK_FILES . "] array can't be empty for $fullClassName (composer = $compoReq)");
-                    }
-                    $checkNoFilesCntBefore = $this->checkNoFilesCnt($basePath, $whatCanDoArr[self::CHECK_FILES]);
-                    if ($checkNoFilesCntBefore) {
-                        $output = $this->composerObj->composerRun('require --ignore-platform-reqs ' . \trim($compoReq));
-                        $checkNoFilesCntAfter = $this->checkNoFilesCnt($basePath, $whatCanDoArr[self::CHECK_FILES]);
-                        if ($checkNoFilesCntAfter !== $checkNoFilesCntBefore) {
+                    $compoReq = \trim($compoReq);
+                    if (!$this->composerObj->getPkgComposerJsonFile($compoReq)) {
+                        $output = $this->composerObj->composerRun('require --ignore-platform-reqs ' . $compoReq);
+
+                        if ($this->composerObj->getPkgComposerJsonFile($compoReq)) {
                             $changesCnt++;
                         } else {
-                            $this->errorPush('[' . self::CHECK_FILES . "] not found after 'composer require $compoReq'\n" .
-                                    \print_r($whatCanDoArr[self::CHECK_FILES], true));
+                            $this->errorPush("Not found package $compoReq after 'composer require $compoReq'\n");
+                        }
+                        if (\array_key_exists(self::CHECK_FILES, $whatCanDoArr)) {
+                            $basePath = $this->vendorDir . '/' . $compoReq;
+                            $checkNoFilesCntAfter = $this->checkNoFilesCnt($basePath, $whatCanDoArr[self::CHECK_FILES]);
+                            if ($checkNoFilesCntAfter) {
+                                $this->errorPush('[' . self::CHECK_FILES . "] not found after 'composer require $compoReq'\n" .
+                                        \print_r($whatCanDoArr[self::CHECK_FILES], true));
+                            }
                         }
                     }
                     break;
