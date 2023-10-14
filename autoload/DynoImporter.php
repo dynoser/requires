@@ -121,18 +121,20 @@ class DynoImporter {
         }
         
         // check composer-files
-        $allVendorComposerJSONFilesArr = [];
-        $composerFilesFile = $vendorDir . '/composer/autoload_files.php';
-        if (\is_file($composerFilesFile)) {
-            $composerAutoLoadFilesArr = (include $composerFilesFile);
-            if (\is_array($composerAutoLoadFilesArr) && $composerAutoLoadFilesArr) {
-                foreach($composerAutoLoadFilesArr as $key => $file) {
-                    $composerAutoLoadFilesArr[$key] = \strtr($file, '\\', '/');
-                }
-            }
-        }
-        $dynoArr['autoload-files'] = $composerAutoLoadFilesArr ? $composerAutoLoadFilesArr : [];
+        // $allVendorComposerJSONFilesArr = [];
+        // $composerFilesFile = $vendorDir . '/composer/autoload_files.php';
+        // if (\is_file($composerFilesFile)) {
+        //     $composerAutoLoadFilesArr = (include $composerFilesFile);
+        //     if (\is_array($composerAutoLoadFilesArr) && $composerAutoLoadFilesArr) {
+        //         foreach($composerAutoLoadFilesArr as $key => $file) {
+        //             $composerAutoLoadFilesArr[$key] = \strtr($file, '\\', '/');
+        //         }
+        //     }
+        // }
+        // $dynoArr['autoload-files'] = $composerAutoLoadFilesArr ? $composerAutoLoadFilesArr : [];
+        $dynoArr['autoload-files'] = [];
         $dynoArr['dyno-update'] = [];
+        $dynoArr['dyno-requires'] = [];
 
         // get All vendor-composer.json files
         $allVendorComposerJSONFilesArr = self::getAllVendorComposerJsonFilesArr($vendorDir);
@@ -149,17 +151,23 @@ class DynoImporter {
             if (!\is_file($composerFullFile) || \substr($pkgName, 0, 8) === 'dynoser/') {
                 continue;
             }
-            if (!empty($JsonDataArr['autoload']['files']) && !empty($JsonDataArr['autoload']['psr-4']) && \is_array($JsonDataArr['autoload']['psr-4'])) {
-                foreach($JsonDataArr['autoload']['psr-4'] as $psr4 => $path) {
-                    $psr4 = \trim($psr4, '\\/ ');
-                    $psr4 = \strtr($psr4, '\\', '/');
-                    unset($dynoArr[$psr4]);
+            if (!empty($JsonDataArr['autoload']['files'])) {
+                $dynoArr['autoload-files'][$pkgName] = $JsonDataArr['autoload']['files'];
+
+                if (!empty($JsonDataArr['autoload']['psr-4']) && \is_array($JsonDataArr['autoload']['psr-4'])) {
+                    foreach($JsonDataArr['autoload']['psr-4'] as $psr4 => $path) {
+                        $psr4 = \trim($psr4, '\\/ ');
+                        $psr4 = \strtr($psr4, '\\', '/');
+                        unset($dynoArr[$psr4]);
+                    }
                 }
             }
             if (!empty($JsonDataArr['extra']) && \is_array($JsonDataArr['extra'])) {
                 $extraArr = $JsonDataArr['extra'];
-                if (!empty($extraArr['dyno-update'])) {
-                    $dynoArr['dyno-update'][$pkgName] = $extraArr['dyno-update'];
+                foreach(['dyno-update', 'dyno-requires'] as $key) {
+                    if (array_key_exists($key, $extraArr)) {
+                        $dynoArr[$key][$pkgName] = $extraArr[$key];
+                    }
                 }
             }
         }
