@@ -157,7 +157,7 @@ class AutoLoader
     }
     
     public static function addNameSpaceBase($nameSpace, $linkedPath, $ifNotExist = true) {
-        $nameSpace = \trim(\strtr($nameSpace, '\\', '/'), "/ \n\r\v\t");
+        $nameSpace = \trim($nameSpace, "/\\ \n\r\v\t");
         if ($ifNotExist && !empty(self::$classesArr[$nameSpace])) {
             return false;
         }
