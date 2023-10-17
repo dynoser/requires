@@ -15,6 +15,9 @@ class RequireManager {
 
     public const OUR_AUTO_LOADER_CLASS = '\dynoser\autoload\AutoLoader';
     public const HELML_CLASS = '\\dynoser\\HELML\\HELML';
+    public const HASHSIG_CLASS = '\\dynoser\\hashsig\\HashSig';
+    public static bool $useHashSig = false; // auto-set true if HASHSIG_CLASS found
+    public $HashSigObj = null; // auto-create object by HASHSIG_CLASS
 
     public string $vendorDir;
     public string $extDir = '';
@@ -50,6 +53,7 @@ class RequireManager {
     const DO_NOT_UPDATE = 'donotupdate';
     const LOAD_FROM_PATH = 'frompath';
     const LOAD_BY_COMPOSER = 'composer';
+    const LOAD_BY_HASHSIG = 'hashsig';
     const LOAD_REQ_FROM = 'requiresfrom';
     const LOAD_FILES = 'files';
     const TARGET_FOLDER = 'target';
@@ -157,6 +161,27 @@ class RequireManager {
             }
         } else {
             throw new \Exception("Not found " . self::HELML_CLASS . " class, required");
+        }
+
+        // check hashsig and install if need
+        // check helml and install if need
+        if (!\class_exists(self::HASHSIG_CLASS)) {
+            $isOk = $this->composerObj->composerUpdate();
+            if (!$isOk) {
+                throw new \Exception("Composer is not OK");                
+            }
+            $this->composerObj->composerRun('require dynoser/hashsig');
+            AutoLoadSetup::updateFromComposer();
+            if (\class_exists(self::HASHSIG_CLASS)) {
+                if ($this->echoOn) {
+                    echo "hashsig installed successful\n";
+                }
+            }
+        }
+        $hashSigClass = self::HASHSIG_CLASS;
+        if (\class_exists($hashSigClass, false)) {
+            self::$useHashSig = true;
+            $this->HashSigObj = new $hashSigClass();
         }
 
         // check dynoser/requires installed in vendor
@@ -396,7 +421,10 @@ class RequireManager {
                 if (!$i) {
                     throw new \Exception("Illegal class name for module ext: $fullClassName");
                 }
-                $targetPath = $this->extDir . '/' . \substr($fullClassName, $i);
+                $targetPath = $this->extDir . '/' . \substr($fullClassName, $i + 1);
+                if (!\is_dir($this->extDir) && !\mkdir($this->extDir)) {
+                    throw new \Exception("Can't create extDir: " . $this->extDir);
+                }
                 break;
             case self::TARGET_CLASSES:
                 $targetAdd = \substr($targetFolder, $tnLen);
@@ -437,6 +465,29 @@ class RequireManager {
                     $result = $this->LoadFiles($targetPath, $stepArr, $doNotUpdate, $urlSpecArr, \strlen($this->classesDir));
                     if (true === $result) {
                         $changesCnt++;
+                    }
+                    break;
+                case self::LOAD_BY_HASHSIG:
+                    $hsLink = $stepArr;
+                    if (!\is_string($hsLink)) {
+                        $this->errorPush("Illegal hashsig link", null, true);
+                    }
+                    if (!self::$useHashSig) {
+                        $this->errorPush("Can't use hashsig, module not detected", null, true);
+                    }
+                    $res = $this->HashSigObj->getFilesByHashSig($hsLink, $targetPath);
+                    if (empty($res['successArr'])) {
+                        $this->errorPush("No success results on hashsig: $hsLink");
+                    }
+                    if (!empty($res['errorsArr'])) {
+                        $this->errorPush("Got errors on hashsig: $hsLink \n", null, false, $res['errorsArr']);
+                    }
+                    if (\array_key_exists(self::CHECK_FILES, $whatCanDoArr)) {
+                        $checkNoFilesCntAfter = $this->checkNoFilesCnt($targetPath, $whatCanDoArr[self::CHECK_FILES]);
+                        if ($checkNoFilesCntAfter) {
+                            $this->errorPush('[' . self::CHECK_FILES . "] not found after 'hashsig $hsLink'\n" .
+                                    \print_r($whatCanDoArr[self::CHECK_FILES], true));
+                        }
                     }
                     break;
                 case self::LOAD_BY_COMPOSER:
