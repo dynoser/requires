@@ -119,7 +119,7 @@ class AutoLoader
             }
             if (\substr($filePathString, -1) === '/') {
                 $filePathString .= $classShortName . '.php';
-            } else {
+            } elseif ('?' !== $firstChar) {
                 // Remove rule for one-specified-file
                 unset(self::$classesArr[$nameSpaceKey][$numKey]);
             }
