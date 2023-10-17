@@ -46,6 +46,7 @@ class RequireManager {
     const ADD_BASE_URLS = 'urlbases';
     const REQ_NAMESPACES = 'namespaces';
     const REQ_ALIASES = 'aliases';
+    const CLASS_FOR_ALIAS = 'alias';
     
     const URL_SPEC = 'url';
 
@@ -62,7 +63,6 @@ class RequireManager {
     const  TARGET_CLASSES = 'classes';
     const  TARGET_CURRENT = '.';
     const CHECK_FILES = 'checkfiles';
-    const CLASS_FOR_ALIAS = 'alias';
 
     public $valuesArr = [];
     
@@ -145,6 +145,7 @@ class RequireManager {
     public function run() {
         $this->composerObj->composerWorksInit();
         $this->downLoaderInit();
+        $this->composerObj->composerUpdate();
         
         // check helml and install if need
         if (!\class_exists(self::HELML_CLASS)) {
@@ -343,30 +344,14 @@ class RequireManager {
                     }
                     break;
                 case self::REQ_ALIASES:
-                    foreach($whatCanDoArr as $toClassName => $fromClassName) {
-                        $toClassName = \strtr($toClassName, '/', '\\');
-                        $fromClassName = \strtr($fromClassName, '/', '\\');
-                        if (!isset($this->aliasesArr[$toClassName]) || $this->aliasesArr[$toClassName] !== $fromClassName) {
-                            $this->aliasesArr[$toClassName] = $fromClassName;
-                            $this->aliasesChanged = true;
-                            $fromClassName = '?' . $fromClassName;
-                            if (empty(AutoLoader::$classesArr[$toClassName]) || AutoLoader::$classesArr[$toClassName] !== $fromClassName) {
-                                AutoLoader::$classesArr[$toClassName] = $fromClassName;
-                                AutoLoader::$changed = true;
-                            }
-                        }
+                    if ($this->setupAliases($whatCanDoArr)) {
+                        $depChangesMaked++;
                     }
                     $whatCanDoArr = [];
                     // not break
                 case self::REQ_NAMESPACES:
-                    foreach($whatCanDoArr as $namespace => $fromPath) {
-                        if (\is_string($fromPath)) {
-                            $fromPath = \strtr($fromPath, '\\', '/');
-                        }
-                        if (empty(AutoLoader::$classesArr[$namespace]) || AutoLoader::$classesArr[$namespace] !== $fromPath) {
-                            AutoLoader::$classesArr[$namespace] = $fromPath;
-                            AutoLoader::$changed = true;
-                        }
+                    if ($this->setupNameSpaces($whatCanDoArr)) {
+                        $depChangesMaked++;
                     }
                     if (AutoLoader::$changed) {
                         AutoLoadSetup::updateFromComposer();
@@ -445,14 +430,6 @@ class RequireManager {
         foreach($whatCanDoArr as $stepKey => $stepArr) {
             $changesCnt = 0;
             switch ($stepKey) {
-                // let it work by default
-//                case self::REQUIRES_FILE_BASE:
-//                case self::REQUIRES_FILE_SET:
-//                case self::CLASS_FOR_ALIAS:
-//                case self::TARGET_FOLDER:
-//                case self::DO_NOT_AUTO_LOAD:
-//                case self::URL_SPEC;
-//                    continue 2;
                 case self::LOAD_FILES:
                     $urlSpecArr = $whatCanDoArr[self::URL_SPEC] ?? [];
                     if (\is_string($urlSpecArr)) {
@@ -540,6 +517,28 @@ class RequireManager {
                     }
                     $changesCnt = $this->tryLoadFromPath($fullClassName, $stepArr);
                     break;
+                case self::REQ_ALIASES:
+                case self::CLASS_FOR_ALIAS:
+                    if (\is_array($stepArr)) {
+                        if ($this->setupAliases($stepArr)) {
+                            $depChangesMaked++;
+                            AutoLoadSetup::updateFromComposer();
+                            AutoLoader::$changed = false;
+                        }
+                    } else {
+                        $this->errorPush("Illegal type for key $stepKey, array expected");
+                    }
+                    break;
+                case self::REQ_NAMESPACES:
+                    if (\is_array($stepArr)) {
+                        if ($this->setupNameSpaces($stepArr)) {
+                            $depChangesMaked++;
+                            AutoLoadSetup::updateFromComposer();
+                            AutoLoader::$changed = false;
+                        }
+                    } else {
+                        $this->errorPush("Illegal type for key $stepKey, array expected");
+                    }
                 default:
                     continue 2;
             }
@@ -551,24 +550,41 @@ class RequireManager {
             }
         }
         
-        if (isset($whatCanDoArr[self::CLASS_FOR_ALIAS])) {
-            $classForAlias = $whatCanDoArr[self::CLASS_FOR_ALIAS];
-            if (!\is_string($classForAlias)) {
-                throw new \Exception("alias must have string type (for $fullClassName )");
+        return $depChangesMaked;
+    }
+
+    public function setupNameSpaces(array $whatCanDoArr) {
+        $changed = false;
+        foreach($whatCanDoArr as $namespace => $fromPath) {
+            if (\is_string($fromPath)) {
+                $fromPath = \strtr($fromPath, '\\', '/');
             }
-            $classForAlias = \strtr($classForAlias, '/', '\\');
-            if (!isset($this->aliasesArr[$fullClassName]) || $this->aliasesArr[$fullClassName] !== $classForAlias) {
-                $this->aliasesArr[$fullClassName] = $classForAlias;
+            if (empty(AutoLoader::$classesArr[$namespace]) || AutoLoader::$classesArr[$namespace] !== $fromPath) {
+                AutoLoader::$classesArr[$namespace] = $fromPath;
+                AutoLoader::$changed = true;
+                $changed = true;
+            }
+        }
+        return $changed;
+    }
+
+    public function setupAliases(array $whatCanDoArr) {
+        $changed = false;
+        foreach($whatCanDoArr as $toClassName => $fromClassName) {
+            $toClassName = \strtr($toClassName, '/', '\\');
+            $fromClassName = \strtr($fromClassName, '/', '\\');
+            if (!isset($this->aliasesArr[$toClassName]) || $this->aliasesArr[$toClassName] !== $fromClassName) {
+                $this->aliasesArr[$toClassName] = $fromClassName;
                 $this->aliasesChanged = true;
-            }
-            if (!\class_exists($fullClassName, false) && \class_exists($classForAlias, true)) {
-                if (\class_alias($classForAlias, $fullClassName)) {
-                    $depChangesMaked++;
+                $fromClassName = '?' . $fromClassName;
+                if (empty(AutoLoader::$classesArr[$toClassName]) || AutoLoader::$classesArr[$toClassName] !== $fromClassName) {
+                    AutoLoader::$classesArr[$toClassName] = $fromClassName;
+                    AutoLoader::$changed = true;
+                    $changed = true;
                 }
             }
         }
-        
-        return $depChangesMaked;
+        return $changed;
     }
 
     public function tryLoadFromPath(string $fullClassName, array $fromPathArr) {
