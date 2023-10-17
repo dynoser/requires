@@ -52,6 +52,7 @@ class RequireManager {
 
     const DO_NOT_AUTO_LOAD = 'dontautoload';
     const DO_NOT_UPDATE = 'donotupdate';
+    const DO_NOT_OVERWRITE = 'dontoverwrite';
     const LOAD_FROM_PATH = 'frompath';
     const LOAD_BY_COMPOSER = 'composer';
     const LOAD_BY_HASHSIG = 'hashsig';
@@ -385,7 +386,6 @@ class RequireManager {
     
     public function depChangesMake(string $fullBasePath, string $fullClassName, array $whatCanDoArr): int {
         $depChangesMaked = 0;
-        $ourAutoLoaderClass = self::OUR_AUTO_LOADER_CLASS;
         
         //calculate $targetPath
         $targetFolder = empty($whatCanDoArr[self::TARGET_FOLDER]) ? null : $whatCanDoArr[self::TARGET_FOLDER];
@@ -416,9 +416,9 @@ class RequireManager {
             case self::TARGET_CLASSES:
                 $targetAdd = \substr($targetFolder, $tnLen);
                 $targetPath = $this->classesDir . $targetAdd;
-                if (empty($targetAdd)) {
-                    $this->errorPush("Target must specified sub-folder in 'classes/sub-folders' format. Can't use classes-root folder", null, true);
-                }
+                // if (empty($targetAdd)) {
+                //     $this->errorPush("Target must specified sub-folder in 'classes/sub-folders' format. Can't use classes-root folder", null, true);
+                // }
                 break;
             case self::TARGET_CURRENT:
                 $targetPath = $fullBasePath;
@@ -454,7 +454,8 @@ class RequireManager {
                     if (!self::$useHashSig) {
                         $this->errorPush("Can't use hashsig, module not detected", null, true);
                     }
-                    $res = $this->HashSigObj->getFilesByHashSig($hsLink, $targetPath);
+                    $doNotOverWrite = !empty($whatCanDoArr[self::DO_NOT_OVERWRITE]);
+                    $res = $this->HashSigObj->getFilesByHashSig($hsLink, $targetPath, null, false, $doNotOverWrite);
                     if (empty($res['successArr'])) {
                         $this->errorPush("No success results on hashsig: $hsLink");
                     }
@@ -541,6 +542,7 @@ class RequireManager {
                     } else {
                         $this->errorPush("Illegal type for key $stepKey, array expected");
                     }
+                    break;
                 default:
                     continue 2;
             }
