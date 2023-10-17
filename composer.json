@@ -13,8 +13,7 @@
         ]
     },
     "require": {
-        "dynoser/helml": "*",
-        "dynoser/hashsig": "*"
+        "dynoser/helml": "*"
     },
     "extra": {
         "dyno-update": "https://github.com/dynoser/requires/blob/main/dyno-update.json"
