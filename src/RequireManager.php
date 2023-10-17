@@ -145,17 +145,19 @@ class RequireManager {
     public function run() {
         $this->composerObj->composerWorksInit();
         $this->downLoaderInit();
-        $this->composerObj->composerUpdate();
+
+        $isOk = $this->composerObj->composerUpdate();
+        if (!$isOk) {
+            throw new \Exception("Composer is not OK");                
+        }
         
         // check helml and install if need
         if (!\class_exists(self::HELML_CLASS)) {
-            $isOk = $this->composerObj->composerUpdate();
-            if (!$isOk) {
-                throw new \Exception("Composer is not OK");                
-            }
             $this->composerObj->composerRun('require dynoser/helml');
-            AutoLoadSetup::updateFromComposer();
         }
+
+        AutoLoadSetup::updateFromComposer();
+
         if (\class_exists(self::HELML_CLASS)) {
             if (!\array_key_exists('.helml', $this->requireExtArr)) {
                 $this->requireExtArr['.helml'] = 1;
