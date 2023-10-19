@@ -4,9 +4,9 @@ use dynoser\autoload\AutoLoadSetup;
 
 (function ($classShortName) {
     $reqManClass = 'dynoser\\requires\\' . $classShortName;
+    $AutoLoadSetup = 'dynoser\\autoload\\AutoLoadSetup';
 
     if (!\class_exists($reqManClass, false)) {
-        
         // check command line arguments, like ROOT_DIR "path"
         global $argc, $argv;
         if (!\defined('ROOT_DIR')) {
@@ -25,16 +25,27 @@ use dynoser\autoload\AutoLoadSetup;
                     }
                 }
             }
+            if (!\defined('ROOT_DIR') && \class_exists($AutoLoadSetup, false)) {
+                $rootDir = AutoLoadSetup::$rootDir;
+                \define('ROOT_DIR', $rootDir);
+            }
         }
 
-        // setup autoloader and vars in AutoLoadSetup:: $vendorDir, $rootDir, $classesDir, $extDir
-        require_once __DIR__ . '/autoload/autoload.php';
+        if (!\class_exists($AutoLoadSetup, false)) {
+            // setup autoloader and vars in AutoLoadSetup:: $vendorDir, $rootDir, $classesDir, $extDir
+            $autoLoadFile = $rootDir . '/vendor/autoload.php';
+            if (\is_file($autoLoadFile)) {
+                require_once $autoLoadFile;
+            }
+            if (!\class_exists($AutoLoadSetup, false)) {
+                throw new \Exception("run it: 'composer require dynoser/autoload'");
+            }
+        }
 
         $setOwnNameSpaces = function() {
             // Since this namespace may not be in DYNO_FILE now, add it
             // Also, we want to use this version and not the one the composer might give
-            AutoLoader::addNameSpaceBase('dynoser/requires', __DIR__ . '/src', false);
-            AutoLoader::addNameSpaceBase('dynoser/autoload', __DIR__ . '/autoload', false);
+            AutoLoader::addNameSpaceBase('dynoser/requires', '*' . __DIR__ . '/src', false);
         };
         $setOwnNameSpaces();
         
