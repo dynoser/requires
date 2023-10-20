@@ -192,7 +192,8 @@ class ComposerWorks {
     }
 
     public static function getWhereArr($progName) {
-        return self::getShellNonEmptyRows('where ' . $progName);
+        $whereCmd = ('\\' === \DIRECTORY_SEPARATOR) ? 'where ' : 'which ';
+        return self::getShellNonEmptyRows($whereCmd . $progName);
     }
 
     public static function getShellNonEmptyRows($cmd) {
