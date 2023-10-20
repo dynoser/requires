@@ -187,7 +187,13 @@ class ComposerWorks {
                 }
             }
         }
-
+        if (!$foundComposerPharFiles && $whereFiles && \DIRECTORY_SEPARATOR === '/') {
+            foreach ($whereFiles as $composerFile) {
+                if (\is_file($composerFile)) {
+                    $foundComposerPharFiles[] = $composerFile;
+                }
+            }
+        }
         return \reset($foundComposerPharFiles);
     }
 
