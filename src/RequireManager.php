@@ -127,7 +127,7 @@ class RequireManager {
                 \mkdir($classesDir, 0777, true);
             }
             if (!\is_dir($classesDir)) {
-                throw new \Exception('Classes dir not found, it is required: $classesDir');
+                throw new \Exception("Classes dir not found, it is required: $classesDir");
             }
             $this->classesDir = $classesDir;
         }
