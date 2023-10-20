@@ -1,0 +1,6 @@
+hashsig: d50a9889a581df0ecf1ad84c60adcbb7c2d6328538d7dfd45b174a3fc5289e26 ~ filescnt: 5 ~ hashalg: sha256 ~ signalg: ed25519 ~ pubkey: EkDohf20jN/9kXW/WL3ZXo245ggek9TiTWzzmBriMTU= ~ signature: BpTaxeaQB749+cO8GIHHAQXelzghZGZDLGF4qDtwEQVFtms6m9TpClKMo2+3E/vw2CXNOk7aoahijXMYcB0xDA==
+requires.php: 24e913c9064cef1b9c805073e2d1dab8ea1c39fbb5ea0a971b679523c51cd0ba 2715
+src/ComposerWorks.php: a120220e0f9202a418d8ebafa06bf0c20ad060240fe18d21da65dbb90848871b 10761
+src/DownLoader.php: c5e5834a2626ef5c6c16ad45a5c5fbe210aecbd4a6d98b89526f8bcf3016ed58 11100
+src/RequireManager.php: 7dca86ec2dd0f427ed9a65b6f3e008f67525fc52b28a803525918682f9068bb9 26342
+src/RequiresFiles.php: ad7b4181e8c97fa9af44b00a2279e6bbce8f4648479e7f95a100abbccc055783 5609
